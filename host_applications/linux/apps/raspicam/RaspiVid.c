@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory.h>
 #include <sysexits.h>
 
-#define VERSION_STRING "v1.3.7"
+#define VERSION_STRING "v1.3.6"
 
 #include "bcm_host.h"
 #include "interface/vcos/vcos.h"
@@ -72,6 +72,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "RaspiCamControl.h"
 #include "RaspiPreview.h"
 #include "RaspiCLI.h"
+#include "RaspiTex.h"
 
 #include <semaphore.h>
 
@@ -154,6 +155,8 @@ struct RASPIVID_STATE_S
    int segmentWrap;                    /// Point at which to wrap segment counter
    int segmentNumber;                  /// Current segment counter. Starts at 1.
 
+	int useGL;                          /// Render preview using OpenGL
+
    RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
    RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
 
@@ -165,6 +168,8 @@ struct RASPIVID_STATE_S
    MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
 
    PORT_USERDATA callback_data;        /// Used to move data to the encoder callback
+   
+   RASPITEX_STATE raspitex_state; /// GL renderer state and parameters
 
    int bCapturing;                     /// State of capture/pause
 
@@ -215,28 +220,31 @@ static void display_valid_parameters(char *app_name);
 #define CommandSegmentFile  18
 #define CommandSegmentWrap  19
 
+#define CommandGL           64
+
 static COMMAND_LIST cmdline_commands[] =
 {
-   { CommandHelp,          "-help",       "?",  "This help information", 0 },
-   { CommandWidth,         "-width",      "w",  "Set image width <size>. Default 1920", 1 },
-   { CommandHeight,        "-height",     "h",  "Set image height <size>. Default 1080", 1 },
-   { CommandBitrate,       "-bitrate",    "b",  "Set bitrate. Use bits per second (e.g. 10MBits/s would be -b 10000000)", 1 },
-   { CommandOutput,        "-output",     "o",  "Output filename <filename> (to write to stdout, use '-o -')", 1 },
-   { CommandVerbose,       "-verbose",    "v",  "Output verbose information during run", 0 },
-   { CommandTimeout,       "-timeout",    "t",  "Time (in ms) to capture for. If not specified, set to 5s. Zero to disable", 1 },
-   { CommandDemoMode,      "-demo",       "d",  "Run a demo mode (cycle through range of camera options, no capture)", 1},
-   { CommandFramerate,     "-framerate",  "fps","Specify the frames per second to record", 1},
-   { CommandPreviewEnc,    "-penc",       "e",  "Display preview image *after* encoding (shows compression artifacts)", 0},
-   { CommandIntraPeriod,   "-intra",      "g",  "Specify the intra refresh period (key frame rate/GoP size)", 1},
-   { CommandProfile,       "-profile",    "pf", "Specify H264 profile to use for encoding", 1},
-   { CommandTimed,         "-timed",      "td", "Cycle between capture and pause. -cycle on,off where on is record time and off is pause time in ms", 0},
-   { CommandSignal,        "-signal",     "s",  "Cycle between capture and pause on Signal", 0},
-   { CommandKeypress,      "-keypress",   "k",  "Cycle between capture and pause on ENTER", 0},
-   { CommandInitialState,  "-initial",    "i",  "Initial state. Use 'record' or 'pause'. Default 'record'", 1},
-   { CommandQP,            "-qp",         "qp", "Quantisation parameter. Use approximately 10-40. Default 0 (off)", 1},
-   { CommandInlineHeaders, "-inline",     "ih", "Insert inline headers (SPS, PPS) to stream", 0},
+   { CommandHelp,    "-help",       "?",  "This help information", 0 },
+   { CommandWidth,   "-width",      "w",  "Set image width <size>. Default 1920", 1 },
+   { CommandHeight,  "-height",     "h",  "Set image height <size>. Default 1080", 1 },
+   { CommandBitrate, "-bitrate",    "b",  "Set bitrate. Use bits per second (e.g. 10MBits/s would be -b 10000000)", 1 },
+   { CommandOutput,  "-output",     "o",  "Output filename <filename> (to write to stdout, use '-o -')", 1 },
+   { CommandVerbose, "-verbose",    "v",  "Output verbose information during run", 0 },
+   { CommandTimeout, "-timeout",    "t",  "Time (in ms) to capture for. If not specified, set to 5s. Zero to disable", 1 },
+   { CommandDemoMode,"-demo",       "d",  "Run a demo mode (cycle through range of camera options, no capture)", 1},
+   { CommandFramerate,"-framerate", "fps","Specify the frames per second to record", 1},
+   { CommandPreviewEnc,"-penc",     "e",  "Display preview image *after* encoding (shows compression artifacts)", 0},
+   { CommandIntraPeriod,"-intra",   "g",  "Specify the intra refresh period (key frame rate/GoP size)", 1},
+   { CommandProfile,  "-profile",   "pf", "Specify H264 profile to use for encoding", 1},
+   { CommandTimed,    "-timed",     "td", "Cycle between capture and pause. -cycle on,off where on is record time and off is pause time in ms", 0},
+   { CommandSignal,   "-signal",    "s",  "Cycle between capture and pause on Signal", 0},
+   { CommandKeypress, "-keypress",  "k",  "Cycle between capture and pause on ENTER", 0},
+   { CommandInitialState,"-initial","i",  "Initial state. Use 'record' or 'pause'. Default 'record'", 1},
+   { CommandQP,       "-qp",        "qp", "Quantisation parameter. Use approximately 10-40. Default 0 (off)", 1},
+   { CommandInlineHeaders,"-inline","ih", "Insert inline headers (SPS, PPS) to stream", 0},
    { CommandSegmentFile,   "-segment",    "sg", "Segment output file in to multiple files at specified interval <ms>", 1},
    { CommandSegmentWrap,   "-wrap",       "wr", "In segment mode, wrap any numbered filename back to 1 when reach number", 1},
+   { CommandGL,      "-gl",         "g",  "Draw preview to texture instead of using video render component", 0},
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
@@ -297,12 +305,17 @@ static void default_status(RASPIVID_STATE *state)
    state->segmentSize = 0;  // 0 = not segmenting the file.
    state->segmentNumber = 1;
    state->segmentWrap = 0; // Point at which to wrap segment number back to 1. 0 = no wrap
+   
+   state->useGL = 0;
 
    // Setup preview window defaults
    raspipreview_set_defaults(&state->preview_parameters);
 
    // Set up the camera_parameters to default
    raspicamcontrol_set_defaults(&state->camera_parameters);
+   
+    // Set initial GL preview state
+	raspitex_set_defaults(&state->raspitex_state);
 }
 
 
@@ -567,7 +580,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
          i++;
          break;
       }
-
+  
       case CommandSegmentFile: // Segment file in to chunks of specified time
       {
          if (sscanf(argv[i + 1], "%u", &state->segmentSize) == 1)
@@ -591,6 +604,10 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
       }
 
 
+      case CommandGL:
+            state->useGL = 1;
+            break;
+
       default:
       {
          // Try parsing for any image specific parameters
@@ -602,6 +619,10 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
          // Still unused, try preview options
          if (!parms_used)
             parms_used = raspipreview_parse_cmdline(&state->preview_parameters, &argv[i][1], second_arg);
+		 
+		 // Still unused, try GL preview options
+        if (!parms_used)
+             parms_used = raspitex_parse_cmdline(&state->raspitex_state, &argv[i][1], second_arg);
 
 
          // If no parms were used, this must be a bad parameters
@@ -614,6 +635,18 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
       }
       }
    }
+
+/* GL preview parameters use preview parameters as defaults unless overriden */
+	if (! state->raspitex_state.gl_win_defined)
+		{
+		state->raspitex_state.x       = state->preview_parameters.previewWindow.x;
+		state->raspitex_state.y       = state->preview_parameters.previewWindow.y;
+		state->raspitex_state.width   = state->preview_parameters.previewWindow.width;
+		state->raspitex_state.height  = state->preview_parameters.previewWindow.height;
+		}
+	
+	state->raspitex_state.opacity = state->preview_parameters.opacity;
+	state->raspitex_state.verbose = state->verbose;
 
    if (!valid)
    {
@@ -662,6 +695,9 @@ static void display_valid_parameters(char *app_name)
    // Now display any help information from the camcontrol code
    raspicamcontrol_display_help();
 
+	// Now display GL preview help
+	raspitex_display_help();
+
    fprintf(stderr, "\n");
 
    return;
@@ -687,7 +723,6 @@ static void camera_control_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
 
    mmal_buffer_header_release(buffer);
 }
-
 
 /**
  * Open a file based on the settings in state
@@ -738,6 +773,7 @@ static FILE *open_filename(RASPIVID_STATE *pState)
 static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
    MMAL_BUFFER_HEADER_T *new_buffer;
+
    static int64_t base_time =  -1;
 
    // All our segment times based on the receipt of the first encoder callback
@@ -978,6 +1014,16 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    }
 
    raspicamcontrol_set_all_parameters(camera, &state->camera_parameters);
+
+	if (state->useGL)
+		{
+		status = raspitex_configure_preview_port(&state->raspitex_state, preview_port);
+		if (status != MMAL_SUCCESS)
+			{
+			fprintf(stderr, "Failed to configure preview port for GL rendering");
+			goto error;
+			}
+		}
 
    state->camera_component = camera;
 
@@ -1398,6 +1444,7 @@ int main(int argc, const char **argv)
    MMAL_PORT_T *preview_input_port = NULL;
    MMAL_PORT_T *encoder_input_port = NULL;
    MMAL_PORT_T *encoder_output_port = NULL;
+   FILE *output_file = NULL;
 
    bcm_host_init();
 
@@ -1433,6 +1480,9 @@ int main(int argc, const char **argv)
       dump_status(&state);
    }
 
+	if (state.useGL)
+		raspitex_init(&state.raspitex_state);
+
    // OK, we have a nice set of parameters. Now set up our components
    // We have three components. Camera, Preview and encoder.
 
@@ -1441,7 +1491,7 @@ int main(int argc, const char **argv)
       vcos_log_error("%s: Failed to create camera component", __func__);
       exit_code = EX_SOFTWARE;
    }
-   else if ((status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)
+   else if ((!state.useGL) && (status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create preview component", __func__);
       destroy_camera_component(&state);
@@ -1462,28 +1512,42 @@ int main(int argc, const char **argv)
       camera_preview_port = state.camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
       camera_video_port   = state.camera_component->output[MMAL_CAMERA_VIDEO_PORT];
       camera_still_port   = state.camera_component->output[MMAL_CAMERA_CAPTURE_PORT];
-      preview_input_port  = state.preview_parameters.preview_component->input[0];
+	  
+	  //preview_input_port  = state.preview_parameters.preview_component->input[0];
+	  
+		if (!state.useGL)
+			{
+			if (state.verbose)
+				fprintf(stderr, "Connecting camera preview port to video render.\n");
+
+			// Note we are lucky that the preview and null sink components use the same input port
+			// so we can simple do this without conditionals
+			preview_input_port  = state.preview_parameters.preview_component->input[0];
+			}
+		
+      
       encoder_input_port  = state.encoder_component->input[0];
       encoder_output_port = state.encoder_component->output[0];
+		
+	status = MMAL_SUCCESS;
+		
+	if (!state.useGL)
+		{
+		if (state.preview_parameters.wantPreview )
+			{
+			if (state.verbose)
+				{
+				fprintf(stderr, "Connecting camera preview port to preview input port\n");
+				fprintf(stderr, "Starting video preview\n");
+				}
 
-      if (state.preview_parameters.wantPreview )
-      {
-         if (state.verbose)
-         {
-            fprintf(stderr, "Connecting camera preview port to preview input port\n");
-            fprintf(stderr, "Starting video preview\n");
-         }
+			// Connect camera to preview
+			status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
 
-         // Connect camera to preview
-         status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
-
-         if (status != MMAL_SUCCESS)
-            state.preview_connection = NULL;
-      }
-      else
-      {
-         status = MMAL_SUCCESS;
-      }
+			if (status != MMAL_SUCCESS)
+				state.preview_connection = NULL;
+			}
+		}
 
       if (status == MMAL_SUCCESS)
       {
@@ -1522,10 +1586,17 @@ int main(int argc, const char **argv)
                vcos_log_error("%s: Error opening output file: %s\nNo output file will be generated\n", __func__, state.filename);
             }
          }
+	 
+	 
+		/* If GL preview is requested then start the GL threads */
+		if (state.useGL && (raspitex_start(&state.raspitex_state) != 0))
+			goto error;
 
          // Set up our userdata - this is passed though to the callback where we need the information.
          state.callback_data.pstate = &state;
          state.callback_data.abort = 0;
+	 
+	 
 
          encoder_output_port->userdata = (struct MMAL_PORT_USERDATA_T *)&state.callback_data;
 
@@ -1630,6 +1701,12 @@ error:
 
       if (state.verbose)
          fprintf(stderr, "Closing down\n");
+	  
+		if (state.useGL)
+			{
+			raspitex_stop(&state.raspitex_state);
+			raspitex_destroy(&state.raspitex_state);
+			}
 
       // Disable all our ports that are not handled by connections
       check_disable_port(camera_still_port);
