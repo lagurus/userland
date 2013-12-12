@@ -29,6 +29,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RASPITEX_H_
 #define RASPITEX_H_
 
+// --------------------------------------------------------------------------------------------------
+
+// access functions
+#ifdef __cplusplus
+    #define EXPORT_C extern "C"
+#else
+    #define EXPORT_C
+#endif
+
+// --------------------------------------------------------------------------------------------------
+
 #include <stdio.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
@@ -37,8 +48,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "interface/khronos/include/EGL/eglext_brcm.h"
 #include "interface/mmal/mmal.h"
 
+
+
 #define RASPITEX_VERSION_MAJOR 1
 #define RASPITEX_VERSION_MINOR 0
+
+
 
 typedef enum {
    RASPITEX_SCENE_SQUARE = 0,
@@ -46,6 +61,8 @@ typedef enum {
    RASPITEX_SCENE_TEAPOT,
    RASPITEX_SCENE_YUV,
    RASPITEX_SCENE_SOBEL,
+
+   RASPITEXT_SCENE_SIMPLE = 64
 
 } RASPITEX_SCENE_T;
 
@@ -82,6 +99,8 @@ typedef struct RASPITEX_SCENE_OPS
    /// Draw the scene - called after update_model
    int (*redraw)(struct RASPITEX_STATE *state);
 
+   int (*safe_redraw)(struct RASPITEX_STATE *state);
+
    /// Allocates a buffer and copies the pixels from the current
    /// frame-buffer into it.
    int (*capture)(struct RASPITEX_STATE *state,
@@ -116,6 +135,7 @@ typedef struct RASPITEX_CAPTURE
    int request;
 } RASPITEX_CAPTURE;
 
+
 /**
  * Contains the internal state and configuration for the GL rendered
  * preview window.
@@ -124,6 +144,7 @@ typedef struct RASPITEX_STATE
 {
    int version_major;                  /// For binary compatibility
    int version_minor;                  /// Incremented for new features
+
    MMAL_PORT_T *preview_port;          /// Source port for preview opaque buffers
    MMAL_POOL_T *preview_pool;          /// Pool for storing opaque buffer handles
    MMAL_QUEUE_T *preview_queue;        /// Queue preview buffers to display in order
@@ -153,6 +174,8 @@ typedef struct RASPITEX_STATE
    EGLDisplay display;                 /// The current EGL display
    EGLSurface surface;                 /// The current EGL surface
    EGLContext context;                 /// The current EGL context
+   //EGLConfig config;
+
    const EGLint *egl_config_attribs;   /// GL scenes preferred EGL configuration
 
    GLuint texture;                     /// Name for the preview texture
@@ -173,6 +196,27 @@ typedef struct RASPITEX_STATE
    int verbose;                        /// Log FPS
 
    RASPITEX_CAPTURE capture;           /// Frame-buffer capture state
+   
+   // ------------------------------------------------------------------------------------------------------
+   
+   int	m_nGetData;		// probably not used
+   
+   unsigned char		m_nSaveImageRequest;
+   unsigned char		m_nSaveImageResponse;
+   void							*m_p_ImageData;
+   int							m_nImageSize;
+   
+   char 			m_lpstrPathFile[1024];
+   
+   int		m_nImageWidth;
+   int		m_nImageHeight;
+   
+   int		m_nAnalyzeWidth;
+   int		m_nAnalyzeHeight;
+   
+   int		m_bSaveAlarmImage;
+   
+
 
 } RASPITEX_STATE;
 
@@ -186,6 +230,6 @@ int raspitex_configure_preview_port(RASPITEX_STATE *state,
 void raspitex_display_help();
 int raspitex_parse_cmdline(RASPITEX_STATE *state,
       const char *arg1, const char *arg2);
-int raspitex_capture(RASPITEX_STATE *state, FILE* output_file);
+EXPORT_C int raspitex_capture(RASPITEX_STATE *state, FILE* output_file);
 
 #endif /* RASPITEX_H_ */

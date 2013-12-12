@@ -417,6 +417,30 @@ RaspiVid.c.s:
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/RaspiVid.c.s
 .PHONY : RaspiVid.c.s
 
+Tools.o: Tools.c.o
+.PHONY : Tools.o
+
+# target to build an object file
+Tools.c.o:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/Tools.c.o
+.PHONY : Tools.c.o
+
+Tools.i: Tools.c.i
+.PHONY : Tools.i
+
+# target to preprocess a source file
+Tools.c.i:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/Tools.c.i
+.PHONY : Tools.c.i
+
+Tools.s: Tools.c.s
+.PHONY : Tools.s
+
+# target to generate assembly for a file
+Tools.c.s:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/Tools.c.s
+.PHONY : Tools.c.s
+
 gl_scenes/mirror.o: gl_scenes/mirror.c.o
 .PHONY : gl_scenes/mirror.o
 
@@ -647,6 +671,9 @@ help:
 	@echo "... RaspiVid.o"
 	@echo "... RaspiVid.i"
 	@echo "... RaspiVid.s"
+	@echo "... Tools.o"
+	@echo "... Tools.i"
+	@echo "... Tools.s"
 	@echo "... gl_scenes/mirror.o"
 	@echo "... gl_scenes/mirror.i"
 	@echo "... gl_scenes/mirror.s"

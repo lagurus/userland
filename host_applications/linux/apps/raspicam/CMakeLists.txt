@@ -21,7 +21,7 @@ set (COMMON_SOURCES
 
 add_executable(raspistill ${COMMON_SOURCES} RaspiStill.c  RaspiTex.c RaspiTexUtil.c tga.c ${GL_SCENE_SOURCES})
 add_executable(raspiyuv   ${COMMON_SOURCES} RaspiStillYUV.c)
-add_executable(raspivid   ${COMMON_SOURCES} RaspiVid.c RaspiTex.c RaspiTexUtil.c tga.c ${GL_SCENE_SOURCES})
+add_executable(raspivid   ${COMMON_SOURCES} RaspiVid.c RaspiTex.c RaspiTexUtil.c tga.c Tools.c ${GL_SCENE_SOURCES})
 
 set (MMAL_LIBS mmal_core mmal_util mmal_vc_client)
 
