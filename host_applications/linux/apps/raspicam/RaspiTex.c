@@ -50,6 +50,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gl_scenes/teapot.h"
 #include "gl_scenes/yuv.h"
 
+#include "gl_scenes/simple.h"
+
+#include "Tools.h"
+
 /**
  * \file RaspiTex.c
  *
@@ -97,7 +101,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static COMMAND_LIST cmdline_commands[] =
 {
-   { CommandGLScene, "-glscene",  "gs",  "GL scene square,teapot,mirror,yuv,sobel", 1 },
+   { CommandGLScene, "-glscene",  "gs",  "GL scene square,teapot,mirror,yuv,sobel,simple", 1 },
    { CommandGLWin,   "-glwin",    "gw",  "GL window settings <'x,y,w,h'>", 1 },
 };
 
@@ -159,6 +163,8 @@ int raspitex_parse_cmdline(RASPITEX_STATE *state,
             state->scene_id = RASPITEX_SCENE_YUV;
          else if (strcmp(arg2, "sobel") == 0)
             state->scene_id = RASPITEX_SCENE_SOBEL;
+         else if (strcmp(arg2, "simple") == 0)
+            state->scene_id = RASPITEXT_SCENE_SIMPLE;
          else
             vcos_log_error("Unknown scene %s", arg2);
 
@@ -271,8 +277,9 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
    if (buf)
    {
       /* Update the texture to the new viewfinder image which should */
-      if (state->ops.update_texture)
+      if (state->ops.update_texture && state->m_nSaveImageRequest == 1)		// tweak for save images, but don't too often -> can have high load on CPU
       {
+		//fprintf(stderr, "update_texture\n" );
          rc = state->ops.update_texture(state, (EGLClientBuffer) buf->data);
          if (rc != 0)
          {
@@ -280,10 +287,13 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
                   VCOS_FUNCTION, rc);
             goto end;
          }
+	 
+		state->m_nSaveImageRequest = 2;	// say that I Have one image
       }
 
       if (state->ops.update_y_texture)
       {
+	  //fprintf(stderr, "update_y_texture\n" );
          rc = state->ops.update_y_texture(state, (EGLClientBuffer) buf->data);
          if (rc != 0)
          {
@@ -294,6 +304,8 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
 
       if (state->ops.update_u_texture)
       {
+	  //fprintf(stderr, "update_u_texture\n" );
+	  
          rc = state->ops.update_u_texture(state, (EGLClientBuffer) buf->data);
          if (rc != 0)
          {
@@ -304,6 +316,8 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
 
       if (state->ops.update_v_texture)
       {
+	  //fprintf(stderr, "update_v_texture\n" );
+	  
          rc = state->ops.update_v_texture(state, (EGLClientBuffer) buf->data);
          if (rc != 0)
          {
@@ -312,11 +326,13 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
          }
       }
 
+
+
       /* Now return the PREVIOUS MMAL buffer header back to the camera preview. */
-      if (state->preview_buf)
+      /*if (state->preview_buf)
          mmal_buffer_header_release(state->preview_buf);
 
-      state->preview_buf = buf;
+      state->preview_buf = buf;*/
    }
 
    /*  Do the drawing */
@@ -330,7 +346,7 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
       if (rc != 0)
          goto end;
 
-      raspitex_do_capture(state);
+      //raspitex_do_capture(state);
 
       eglSwapBuffers(state->display, state->surface);
       update_fps();
@@ -353,33 +369,48 @@ end:
  * @param   state The GL preview window state.
  * @return Zero if successful.
  */
+int nTexFrameCount = 0;
+
 static int preview_process_returned_bufs(RASPITEX_STATE* state)
 {
-   MMAL_BUFFER_HEADER_T *buf;
-   int new_frame = 0;
-   int rc = 0;
+	MMAL_BUFFER_HEADER_T *buf;
+	int rc = 0;
 
-   while ((buf = mmal_queue_get(state->preview_queue)) != NULL)
-   {
-      if (state->preview_stop == 0)
-      {
-         new_frame = 1;
-         rc = raspitex_draw(state, buf);
-         if (rc != 0)
-         {
-            vcos_log_error("%s: Error drawing frame. Stopping.", VCOS_FUNCTION);
-            state->preview_stop = 1;
-            return rc;
-         }
-      }
-   }
+	while ((buf = mmal_queue_get(state->preview_queue)) != NULL)
+		{
+		if (state->preview_stop == 0)
+			{
+			if (state->m_nGetData)
+				{
+				rc = raspitex_draw(state, buf);		// block complete chain!!!
+				if (rc != 0)
+					{
+					vcos_log_error("%s: Error drawing frame. Stopping.", VCOS_FUNCTION);
+					state->preview_stop = 1;
+					return rc;
+					}
+				}
+			else
+				{
+				//Now return the PREVIOUS MMAL buffer header back to the camera preview.
+				if (state->preview_buf)
+					mmal_buffer_header_release(state->preview_buf);
+
+				state->preview_buf = buf;
+				}
+			}
+		}
 
    /* If there were no new frames then redraw the scene again with the previous
     * texture. Otherwise, go round the loop again to see if any new buffers
     * are returned.
     */
-   if (! new_frame)
-      rc = raspitex_draw(state, NULL);
+   /*if (! new_frame)
+	   {
+		//vcos_log_info("%s: no new frame - redraw previous.", VCOS_FUNCTION);
+		rc = raspitex_draw(state, NULL);
+	   }*/
+   
    return rc;
 }
 
@@ -390,50 +421,160 @@ static int preview_process_returned_bufs(RASPITEX_STATE* state)
  */
 static void *preview_worker(void *arg)
 {
-   RASPITEX_STATE* state = arg;
-   MMAL_PORT_T *preview_port = state->preview_port;
-   MMAL_BUFFER_HEADER_T *buf;
-   MMAL_STATUS_T st;
-   int rc;
+	RASPITEX_STATE* state = arg;
+	MMAL_PORT_T *preview_port = state->preview_port;
+	MMAL_BUFFER_HEADER_T *buf;
+	MMAL_STATUS_T st;
+	int rc;
 
-   vcos_log_trace("%s: port %p", VCOS_FUNCTION, preview_port);
+	vcos_log_trace("%s: port %p", VCOS_FUNCTION, preview_port);
 
-   rc = state->ops.create_native_window(state);
-   if (rc != 0)
-      goto end;
+	rc = state->ops.create_native_window(state);
 
-   rc = state->ops.gl_init(state);
-   if (rc != 0)
-      goto end;
+	if (rc != 0)
+		goto end;
+	else
+		vcos_log_info("%s: create_native_window=%d", VCOS_FUNCTION, rc);
 
-   while (state->preview_stop == 0)
-   {
-      /* Send empty buffers to camera preview port */
-      while ((buf = mmal_queue_get(state->preview_pool->queue)) != NULL)
-      {
-         st = mmal_port_send_buffer(preview_port, buf);
-         if (st != MMAL_SUCCESS)
-         {
-            vcos_log_error("Failed to send buffer to %s", preview_port->name);
-         }
-      }
-      /* Process returned buffers */
-      if (preview_process_returned_bufs(state) != 0)
-      {
-         vcos_log_error("Preview error. Exiting.");
-         state->preview_stop = 1;
-      }
-   }
+	rc = state->ops.gl_init(state);
+	
+	if (rc != 0)
+		goto end;
+	else
+		vcos_log_info("%s: gl_init=%d", VCOS_FUNCTION, rc);
+	
+	// -------------------------------------------------------------------------------------
+	
+	/* Send empty buffers to camera preview port */
+	while ((buf = mmal_queue_get(state->preview_pool->queue)) != NULL)
+		{
+		st = mmal_port_send_buffer(preview_port, buf);
+		if (st != MMAL_SUCCESS)
+			{
+			vcos_log_error("Failed to send buffer to %s", preview_port->name);
+			}
+		}
+	
+	// -------------------------------------------------------------------------------------
+	
+	//S_COPY_FRAME_DATA	rec_frame_data;
+
+	while (state->preview_stop == 0)
+		{
+		/* Send empty buffers to camera preview port */
+		/*while ((buf = mmal_queue_get(state->preview_pool->queue)) != NULL)
+			{
+			st = mmal_port_send_buffer(preview_port, buf);
+			if (st != MMAL_SUCCESS)
+				{
+				vcos_log_info("Failed to send buffer to %s", preview_port->name);
+				}
+			}*/
+		
+		
+		
+		//int nLen = mmal_queue_length( state->preview_queue );
+		//vcos_log_info("SHIT!!! - LEN=%d", nLen );
+		
+		//while ((buf = mmal_queue_get(state->preview_pool->queue)) != NULL)
+		
+		
+		//if (buf)
+		
+		while ((buf = mmal_queue_get(state->preview_queue)) != NULL)
+			{
+			//vcos_log_info("DATA READ!!!" );
+			
+			
+			rc = raspitex_draw(state, buf);		// block complete chain!!!
+			if (rc != 0)
+				{
+				vcos_log_info("%s: Error drawing frame. Stopping.", VCOS_FUNCTION);
+				state->preview_stop = 1;
+				}
+			
+			
+			
+			st = mmal_port_send_buffer(preview_port, buf);
+			if (st != MMAL_SUCCESS)
+				{
+				vcos_log_info("Failed to send buffer to %s", preview_port->name);
+				}
+			
+			// -------------------------------------------------------------------------------------
+			
+			//vcos_sleep( 100 );
+			
+			rc = state->ops.safe_redraw(state);
+			if (rc != 0)
+				{
+				vcos_log_info("%s: Error drawing frame. Stopping.", VCOS_FUNCTION);
+				state->preview_stop = 1;
+				}
+			
+			// -------------------------------------------------------------------------------------
+			
+			break;
+			}
+		
+		/*if (preview_process_returned_bufs(state) != 0)
+			{
+			vcos_log_info("SHIT!!!" );
+			}
+		else
+			{
+			vcos_log_info("DATA READ!!!" );
+			}*/
+		
+		/*if (begin_read_frame( state->preview_pool->queue, &rec_frame_data ))
+			{
+			vcos_log_info("DATA READ!!!" );
+			
+			//if (state->m_nGetData)
+				{
+				rc = raspitex_draw(state, buf);		// block complete chain!!!
+				if (rc != 0)
+					{
+					vcos_log_info("%s: Error drawing frame. Stopping.", VCOS_FUNCTION);
+					state->preview_stop = 1;
+					}
+				
+				
+				}
+			
+			end_read_frame( preview_port, state->preview_pool, &rec_frame_data );
+			}
+		else
+			{
+			vcos_log_info("SHIT!!!" );
+			}*/
+		
+		//vcos_sleep( 500 );
+		
+		/* Process returned buffers */
+		/*if (preview_process_returned_bufs(state) != 0)
+			{
+			vcos_log_error("Preview error. Exiting.");
+			state->preview_stop = 1;
+			}
+		else
+			{
+			
+			}*/
+		}
+	
+	// -------------------------------------------------------------------------------------
 
 end:
-   /* Make sure all buffers are returned on exit */
-   while ((buf = mmal_queue_get(state->preview_queue)) != NULL)
-      mmal_buffer_header_release(buf);
+	/* Make sure all buffers are returned on exit */
+	while ((buf = mmal_queue_get(state->preview_queue)) != NULL)
+		mmal_buffer_header_release(buf);
 
-   /* Tear down GL */
-   state->ops.gl_term(state);
-   vcos_log_trace("Exiting preview worker");
-   return NULL;
+	/* Tear down GL */
+	state->ops.gl_term(state);
+	vcos_log_trace("Exiting preview worker");
+	
+	return NULL;
 }
 
 /**
@@ -443,26 +584,48 @@ end:
  **/
 static void preview_output_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf)
 {
-   RASPITEX_STATE *state = (RASPITEX_STATE*) port->userdata;
+	RASPITEX_STATE *state = (RASPITEX_STATE*) port->userdata;
 
-   if (buf->length == 0)
-   {
-      vcos_log_trace("%s: zero-length buffer => EOS", port->name);
-      state->preview_stop = 1;
-      mmal_buffer_header_release(buf);
-   }
-   else if (buf->data == NULL)
-   {
-      vcos_log_trace("%s: zero buffer handle", port->name);
-      mmal_buffer_header_release(buf);
-   }
-   else
-   {
-      /* Enqueue the preview frame for rendering and return to
-       * avoid blocking MMAL core.
-       */
-      mmal_queue_put(state->preview_queue, buf);
-   }
+	if (buf->length == 0)
+		{
+		vcos_log_trace("%s: zero-length buffer => EOS", port->name);
+		state->preview_stop = 1;
+		mmal_buffer_header_release(buf);
+		}
+	else if (buf->data == NULL)
+		{
+		vcos_log_trace("%s: zero buffer handle", port->name);
+		mmal_buffer_header_release(buf);
+		}
+	else
+		{
+		/* Enqueue the preview frame for rendering and return to
+		* avoid blocking MMAL core.
+		*/
+		//mmal_queue_put(state->preview_queue, buf);
+		
+		//to handle the user not reading frames, remove and return any pre-existing ones
+		if(mmal_queue_length( state->preview_queue ) >= 2)
+			{
+			//fprintf(stderr, "mmal_queue_length too long\n" );
+			
+			MMAL_BUFFER_HEADER_T *existing_buffer = mmal_queue_get( state->preview_queue );
+			
+			if(existing_buffer)
+				{
+				mmal_buffer_header_release(existing_buffer);
+				
+				if (port->is_enabled)
+					{
+					fill_port_buffer_simple( port, state->preview_pool, "preview_output_cb" );
+					}	// if (port->is_enabled)
+				
+				}	// if(existing_buffer)
+			}
+		
+		//add the buffer to the output queue
+		mmal_queue_put(state->preview_queue, buf );
+		}
 }
 
 /* Registers a callback on the camera preview port to receive
@@ -478,6 +641,7 @@ int raspitex_configure_preview_port(RASPITEX_STATE *state,
       MMAL_PORT_T *preview_port)
 {
    MMAL_STATUS_T status;
+
    vcos_log_trace("%s port %p", VCOS_FUNCTION, preview_port);
 
    /* Enable ZERO_COPY mode on the preview port which instructs MMAL to only
@@ -511,37 +675,42 @@ int raspitex_configure_preview_port(RASPITEX_STATE *state,
    vcos_log_trace("Creating buffer pool for GL renderer num %d size %d",
          preview_port->buffer_num, preview_port->buffer_size);
 
+
+
    /* Pool + queue to hold preview frames */
    state->preview_pool = mmal_port_pool_create(preview_port,
          preview_port->buffer_num, preview_port->buffer_size);
 
-   if (! state->preview_pool)
-   {
-      vcos_log_error("Error allocating pool");
-      status = MMAL_ENOMEM;
-      goto end;
-   }
+	if (! state->preview_pool)
+		{
+		vcos_log_error("Error allocating pool");
+		status = MMAL_ENOMEM;
+		goto end;
+		}
 
-   /* Place filled buffers from the preview port in a queue to render */
-   state->preview_queue = mmal_queue_create();
-   if (! state->preview_queue)
-   {
-      vcos_log_error("Error allocating queue");
-      status = MMAL_ENOMEM;
-      goto end;
-   }
+	/* Place filled buffers from the preview port in a queue to render */
+	state->preview_queue = mmal_queue_create();
+	if (! state->preview_queue)
+		{
+		 vcos_log_error("Error allocating queue");
+		status = MMAL_ENOMEM;
+		goto end;
+		}
 
-   /* Enable preview port callback */
-   preview_port->userdata = (struct MMAL_PORT_USERDATA_T*) state;
-   status = mmal_port_enable(preview_port, preview_output_cb);
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("Failed to camera preview port");
-      goto end;
-   }
+	/* Enable preview port callback */
+	preview_port->userdata = (struct MMAL_PORT_USERDATA_T*) state;
+	
+	status = mmal_port_enable(preview_port, preview_output_cb);
+	if (status != MMAL_SUCCESS)
+		{
+		vcos_log_error("Failed to camera preview port");
+		goto end;
+		}
+	
 end:
-   return (status == MMAL_SUCCESS ? 0 : -1);
+	return (status == MMAL_SUCCESS ? 0 : -1);
 }
+
 
 /* Initialises GL preview state and creates the dispmanx native window.
  * @param state Pointer to the GL preview state.
@@ -585,6 +754,11 @@ int raspitex_init(RASPITEX_STATE *state)
       case RASPITEX_SCENE_SOBEL:
          rc = sobel_open(state);
          break;
+
+     case RASPITEXT_SCENE_SIMPLE:
+         rc = gl_simple_open(state);
+         break;
+	  
       default:
          rc = -1;
          break;
@@ -616,7 +790,6 @@ void raspitex_destroy(RASPITEX_STATE *state)
       mmal_queue_destroy(state->preview_queue);
       state->preview_queue = NULL;
    }
-
    if (state->ops.destroy_native_window)
       state->ops.destroy_native_window(state);
 
@@ -650,14 +823,35 @@ void raspitex_set_defaults(RASPITEX_STATE *state)
    state->height = DEFAULT_HEIGHT;
    state->scene_id = RASPITEX_SCENE_SQUARE;
 
-   state->ops.create_native_window = raspitexutil_create_native_window;
-   state->ops.gl_init = raspitexutil_gl_init_1_0;
-   state->ops.update_model = raspitexutil_update_model;
-   state->ops.redraw = raspitexutil_redraw;
-   state->ops.capture = raspitexutil_capture_bgra;
-   state->ops.gl_term = raspitexutil_gl_term;
-   state->ops.destroy_native_window = raspitexutil_destroy_native_window;
-   state->ops.close = raspitexutil_close;
+	//state->config = 0;
+
+
+	state->ops.create_native_window = raspitexutil_create_native_window;
+	state->ops.gl_init = raspitexutil_gl_init_1_0;
+	//state->ops.update_texture = raspitexutil_update_texture;
+	state->ops.update_model = raspitexutil_update_model;
+	state->ops.redraw = raspitexutil_redraw;
+   	state->ops.capture = raspitexutil_capture_bgra;
+
+	state->ops.safe_redraw = raspitexutil_safe_redraw;
+
+	state->ops.gl_term = raspitexutil_gl_term;
+	state->ops.destroy_native_window = raspitexutil_destroy_native_window;
+	state->ops.close = raspitexutil_close;
+
+	state->m_nGetData = 1;
+	
+	state->m_nSaveImageRequest = 0;
+	state->m_nSaveImageResponse = 0;
+	state->m_p_ImageData = NULL;
+	state->m_nImageSize = 0;
+	
+	state->m_nImageWidth = 640;
+	state->m_nImageHeight = 480;
+	
+	state->m_nAnalyzeWidth = 320;
+	state->m_nAnalyzeHeight = 240;
+
 }
 
 /* Stops the rendering loop and destroys MMAL resources

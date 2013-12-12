@@ -45,6 +45,31 @@ EXPORT_C unsigned GetTickCount( )
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 //
+/*char* GetVideoFileName( RASPIVID_STATE *pstate )
+{
+	time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+	
+	unsigned dwTickCount = GetTickCount( ) % 1000;
+	
+	sprintf( pstate->m_lpstrFilePathName, "%s%04d%02d%02d/%02d%02d%02d_%03d.TMP", 
+																pstate->m_lpstrPathFile,
+																tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+																tm.tm_hour, tm.tm_min, tm.tm_sec,
+																dwTickCount );
+	
+	return pstate->m_lpstrFilePathName;
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------
+//
+EXPORT_C char* GetImageFileName( char *lpstrImagePathName, RASPIVID_STATE *pstate, int nFileType, const char *lpstrSuffix )
+{
+	return GetImageFileNamePrim( lpstrImagePathName, pstate->m_lpstrPathFile, nFileType, lpstrSuffix );
+}*/
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------
+//
 EXPORT_C char* GetImageFileNamePrim( char *lpstrImagePathName, char *lpstrPathFile, int nFileType, const char *lpstrSuffix )
 {
 	if (lpstrImagePathName != NULL)

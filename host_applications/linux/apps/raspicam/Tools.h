@@ -2,7 +2,7 @@
 #ifndef _D_TOOLS_H
 #define _D_TOOLS_H
 
-//#include "interface/mmal/mmal.h"
+#include "interface/mmal/mmal.h"
 
 
 // --------------------------------------------------------------------------------------------------
@@ -26,30 +26,30 @@ EXPORT_C unsigned GetTickCount( );
 
 // --------------------------------------------------------------------------------------------------
 
-
+//char* GetVideoFileName( RASPIVID_STATE *pstate );
+//EXPORT_C char* GetImageFileName( char *lpstrImagePathName, RASPIVID_STATE *pstate, int nFileType, const char *lpstrSuffix );
 EXPORT_C char* GetImageFileNamePrim( char *lpstrImagePathName, char *lpstrPathFile, int nFileType, const char *lpstrSuffix );
 
 void CreateDirectoryStruct( char *lpstrFileName );
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 
-
 // --------------------------------------------------------------------------------------------------
 
-//void ShowBufferInfo( char *lpstrSection, MMAL_BUFFER_HEADER_T *buffer )
+void ShowBufferInfo( char *lpstrSection, MMAL_BUFFER_HEADER_T *buffer );
 void ShowHexData( uint8_t *buf_data, int nBufLen );
 
-/*
-void ShowPortInfo( char *lpstrName, MMAL_PORT_T *p_mmal_port )
+
+void ShowPortInfo( char *lpstrName, MMAL_PORT_T *p_mmal_port );
 void ShowComponnentInfo( char *lpstrName, MMAL_COMPONENT_T *p_componnent );
 
 int fill_port_buffer(MMAL_PORT_T *port, MMAL_POOL_T *pool, char *lpstrPortName );
 int fill_port_buffer_simple(MMAL_PORT_T *port, MMAL_POOL_T *pool, char *lpstrPortName );
 
-int BeginReadFrame( const void* &out_buffer, int& out_buffer_size);
-int EndReadFrame(const void* &out_buffer, int& out_buffer_size);
+//int BeginReadFrame( const void* &out_buffer, int& out_buffer_size);
+//int EndReadFrame(const void* &out_buffer, int& out_buffer_size);
 
-*/
+
 
 // --------------------------------------------------------------------------------------------------
 

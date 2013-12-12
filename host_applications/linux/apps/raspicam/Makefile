@@ -201,6 +201,30 @@ raspiyuv/fast:
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspiyuv.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspiyuv.dir/build
 .PHONY : raspiyuv/fast
 
+MemoryIniFile.o: MemoryIniFile.c.o
+.PHONY : MemoryIniFile.o
+
+# target to build an object file
+MemoryIniFile.c.o:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/MemoryIniFile.c.o
+.PHONY : MemoryIniFile.c.o
+
+MemoryIniFile.i: MemoryIniFile.c.i
+.PHONY : MemoryIniFile.i
+
+# target to preprocess a source file
+MemoryIniFile.c.i:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/MemoryIniFile.c.i
+.PHONY : MemoryIniFile.c.i
+
+MemoryIniFile.s: MemoryIniFile.c.s
+.PHONY : MemoryIniFile.s
+
+# target to generate assembly for a file
+MemoryIniFile.c.s:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/MemoryIniFile.c.s
+.PHONY : MemoryIniFile.c.s
+
 RaspiCLI.o: RaspiCLI.c.o
 .PHONY : RaspiCLI.o
 
@@ -647,6 +671,9 @@ help:
 	@echo "... raspivid"
 	@echo "... raspiyuv"
 	@echo "... rebuild_cache"
+	@echo "... MemoryIniFile.o"
+	@echo "... MemoryIniFile.i"
+	@echo "... MemoryIniFile.s"
 	@echo "... RaspiCLI.o"
 	@echo "... RaspiCLI.i"
 	@echo "... RaspiCLI.s"
