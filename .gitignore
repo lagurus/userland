@@ -11,4 +11,19 @@
 *.la
 *.a
 
+*.cmake
+
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+cmake_config.h
+vmcs_config.h
+
+
+CMakeFiles/
 build/
+debug/
+release/
+temp/
+build/
+etc/

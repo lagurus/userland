@@ -31,7 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define TGA_WRITE(FP, F) \
    if (fwrite((&F), sizeof(F), 1, (FP)) != 1) goto write_fail
-int write_tga(FILE *fp, int width, int height,
+   
+EXPORT_C int write_tga(FILE *fp, int width, int height,
       uint8_t *buffer, size_t buffer_size)
 {
    struct tga_header header;
@@ -41,6 +42,39 @@ int write_tga(FILE *fp, int width, int height,
    header.image_info.y_origin = height;
    header.image_info.height = height;
    header.image_info.bpp = 32;
+
+   TGA_WRITE(fp, header.id_length);
+   TGA_WRITE(fp, header.color_map_type);
+   TGA_WRITE(fp, header.image_type);
+   TGA_WRITE(fp, header.colormap_info.offset);
+   TGA_WRITE(fp, header.colormap_info.length);
+   TGA_WRITE(fp, header.colormap_info.bpp);
+   TGA_WRITE(fp, header.image_info.x_origin);
+   TGA_WRITE(fp, header.image_info.y_origin);
+   TGA_WRITE(fp, header.image_info.width);
+   TGA_WRITE(fp, header.image_info.height);
+   TGA_WRITE(fp, header.image_info.bpp);
+   TGA_WRITE(fp, header.image_info.descriptor);
+
+   if (fwrite(buffer, 1, buffer_size, fp) != buffer_size)
+      goto write_fail;
+
+   return 0;
+write_fail:
+   return -1;
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//
+EXPORT_C int write_tga_grayscale( FILE *fp, int width, int height, uint8_t *buffer, size_t buffer_size )
+{
+   struct tga_header header;
+   memset(&header, 0, sizeof(header));
+   header.image_type = tga_type_grayscale;
+   header.image_info.width = width;
+   header.image_info.y_origin = height;
+   header.image_info.height = height;
+   header.image_info.bpp = 8;
 
    TGA_WRITE(fp, header.id_length);
    TGA_WRITE(fp, header.color_map_type);
@@ -85,7 +119,7 @@ read_fail:
     return -1;
 }
 
-unsigned char *load_tga(const char *filename, struct tga_header *header) {
+EXPORT_C unsigned char *load_tga(const char *filename, struct tga_header *header) {
     unsigned char *image = NULL;
     FILE *fp = fopen(filename, "r");
     if (fp) {

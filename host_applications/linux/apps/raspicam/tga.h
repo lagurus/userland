@@ -29,9 +29,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef TGA_H
 #define TGA_H
 
+#ifdef __cplusplus
+    #define EXPORT_C extern "C"
+#else
+    #define EXPORT_C
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+
 
 typedef enum {
    tga_type_null = 0,
@@ -67,7 +74,9 @@ struct tga_header {
    struct tga_image_info image_info;
 };
 
-int write_tga(FILE* fp, int width, int height, uint8_t *buffer, size_t buffer_size);
-unsigned char *load_tga(const char *filename, struct tga_header *header);
+EXPORT_C int write_tga(FILE* fp, int width, int height, uint8_t *buffer, size_t buffer_size);
+EXPORT_C int write_tga_grayscale( FILE *fp, int width, int height, uint8_t *buffer, size_t buffer_size );
+
+EXPORT_C unsigned char *load_tga(const char *filename, struct tga_header *header);
 
 #endif /* TGA_H */
