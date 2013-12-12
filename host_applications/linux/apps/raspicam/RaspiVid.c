@@ -1444,7 +1444,7 @@ int main(int argc, const char **argv)
    MMAL_PORT_T *preview_input_port = NULL;
    MMAL_PORT_T *encoder_input_port = NULL;
    MMAL_PORT_T *encoder_output_port = NULL;
-   FILE *output_file = NULL;
+   //FILE *output_file = NULL;
 
    bcm_host_init();
 

@@ -29,6 +29,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RASPITEX_UTIL_H_
 #define RASPITEX_UTIL_H_
 
+// access functions
+#ifdef __cplusplus
+    #define EXPORT_C extern "C"
+#else
+    #define EXPORT_C
+#endif
+
 #define VCOS_LOG_CATEGORY (&raspitex_log_category)
 #include <math.h>
 #include <stdio.h>
@@ -38,6 +45,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <EGL/eglext.h>
 #include "RaspiTex.h"
 #include "interface/vcos/vcos.h"
+
+
+
 
 extern VCOS_LOG_CAT_T raspitex_log_category;
 
@@ -68,7 +78,6 @@ typedef struct RASPITEXUTIL_SHADER_PROGRAM_T
    GLint attribute_locations[SHADER_MAX_ATTRIBUTES];
 } RASPITEXUTIL_SHADER_PROGRAM_T;
 
-
 /* Uncomment to enable extra GL error checking */
 //#define CHECK_GL_ERRORS
 #if defined(CHECK_GL_ERRORS)
@@ -90,27 +99,37 @@ while(0)
 
 /* Default GL scene ops functions */
 int raspitexutil_create_native_window(RASPITEX_STATE *raspitex_state);
-int raspitexutil_gl_init_1_0(RASPITEX_STATE *raspitex_state);
-int raspitexutil_gl_init_2_0(RASPITEX_STATE *raspitex_state);
+
+EXPORT_C int raspitexutil_gl_init_1_0(RASPITEX_STATE *raspitex_state);
+EXPORT_C int raspitexutil_gl_init_2_0(RASPITEX_STATE *raspitex_state);
+EXPORT_C int raspitexutil_gl_init_3_0(RASPITEX_STATE *raspitex_state);
+
 int raspitexutil_update_model(RASPITEX_STATE* raspitex_state);
 int raspitexutil_redraw(RASPITEX_STATE* raspitex_state);
+int raspitexutil_safe_redraw(RASPITEX_STATE* raspitex_state);
+
 void raspitexutil_gl_term(RASPITEX_STATE *raspitex_state);
 void raspitexutil_destroy_native_window(RASPITEX_STATE *raspitex_state);
 int raspitexutil_create_textures(RASPITEX_STATE *raspitex_state);
-int raspitexutil_update_texture(RASPITEX_STATE *raspitex_state,
+
+EXPORT_C int raspitexutil_update_texture(RASPITEX_STATE *raspitex_state,
       EGLClientBuffer mm_buf);
-int raspitexutil_update_y_texture(RASPITEX_STATE *raspitex_state,
+EXPORT_C int raspitexutil_update_y_texture(RASPITEX_STATE *raspitex_state,
       EGLClientBuffer mm_buf);
-int raspitexutil_update_u_texture(RASPITEX_STATE *raspitex_state,
+EXPORT_C int raspitexutil_update_u_texture(RASPITEX_STATE *raspitex_state,
       EGLClientBuffer mm_buf);
-int raspitexutil_update_v_texture(RASPITEX_STATE *raspitex_state,
+EXPORT_C int raspitexutil_update_v_texture(RASPITEX_STATE *raspitex_state,
       EGLClientBuffer mm_buf);
+	  
+EXPORT_C int raspitexutil_get_onelayer( uint8_t *buffer, size_t size, int nLayer );
+	  
 int raspitexutil_capture_bgra(struct RASPITEX_STATE *state,
       uint8_t **buffer, size_t *buffer_size);
 void raspitexutil_close(RASPITEX_STATE* raspitex_state);
 
 /* Utility functions */
-int raspitexutil_build_shader_program(RASPITEXUTIL_SHADER_PROGRAM_T *p);
-void raspitexutil_brga_to_rgba(uint8_t *buffer, size_t size);
+EXPORT_C int raspitexutil_build_shader_program(RASPITEXUTIL_SHADER_PROGRAM_T *p);
+EXPORT_C void raspitexutil_brga_to_rgba(uint8_t *buffer, size_t size);
+
 
 #endif /* RASPITEX_UTIL_H_ */

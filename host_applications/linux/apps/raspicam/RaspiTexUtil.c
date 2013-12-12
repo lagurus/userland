@@ -242,6 +242,7 @@ int raspitexutil_create_textures(RASPITEX_STATE *raspitex_state)
 int raspitexutil_gl_init_1_0(RASPITEX_STATE *raspitex_state)
 {
    int rc;
+
    const EGLint* attribs = raspitex_state->egl_config_attribs;
 
    const EGLint default_attribs[] =
@@ -311,6 +312,38 @@ int raspitexutil_gl_init_2_0(RASPITEX_STATE *raspitex_state)
       goto end;
 
    rc = raspitexutil_create_textures(raspitex_state);
+end:
+   return rc;
+}
+
+EXPORT_C int raspitexutil_gl_init_3_0(RASPITEX_STATE *raspitex_state)
+{
+   int rc;
+   const EGLint attribs[] =
+   {
+      EGL_RED_SIZE,   8,
+      EGL_GREEN_SIZE, 8,
+      EGL_BLUE_SIZE,  8,
+      EGL_ALPHA_SIZE, 8,
+      EGL_DEPTH_SIZE, 16,
+      EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
+      //EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+   
+      EGL_NONE
+   };
+
+   const EGLint context_attribs[] =
+   {
+      EGL_CONTEXT_CLIENT_VERSION, 2,
+      EGL_NONE
+   };
+
+   vcos_log_info("%s", VCOS_FUNCTION);
+   rc = raspitexutil_gl_common(raspitex_state, attribs, context_attribs);
+   if (rc != 0)
+      goto end;
+   GLCHK(glGenTextures(1, &raspitex_state->texture));
+
 end:
    return rc;
 }
@@ -422,6 +455,12 @@ int raspitexutil_redraw(RASPITEX_STATE* raspitex_state)
    return 0;
 }
 
+int raspitexutil_safe_redraw(RASPITEX_STATE* raspitex_state)
+{
+   (void) raspitex_state;
+   return 0;
+}
+
 /**
  * Default is a no-op
  * @param raspitex_state A pointer to the GL preview state.
@@ -436,7 +475,7 @@ void raspitexutil_close(RASPITEX_STATE* raspitex_state)
  * @param buffer The buffer to modify.
  * @param size Size of the buffer in bytes.
  */
-void raspitexutil_brga_to_rgba(uint8_t *buffer, size_t size)
+EXPORT_C void raspitexutil_brga_to_rgba(uint8_t *buffer, size_t size)
 {
    uint8_t* out = buffer;
    uint8_t* end = buffer + size;
@@ -448,6 +487,35 @@ void raspitexutil_brga_to_rgba(uint8_t *buffer, size_t size)
       out[2] = tmp;
       out += 4;
    }
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//
+EXPORT_C int raspitexutil_get_onelayer( uint8_t *buffer, size_t size, int nLayer )
+{
+	int nReturn = 0;
+
+	uint8_t* input = buffer;
+	uint8_t* output = buffer;
+
+	uint8_t* end = buffer + size;
+
+	if (nLayer >= 0 && nLayer <= 3)
+		{
+		nReturn = 1;
+		
+		while (input < end)
+			{
+			output[0] = input[nLayer];
+			//output[1] = input[nLayer];
+			
+			input 	+= 4;
+			output += 1;
+			}
+		
+		}	// if (nLayer >= 0 && nLayer <= 3)
+	
+	return nReturn;
 }
 
 /**
