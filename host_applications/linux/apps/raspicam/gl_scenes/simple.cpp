@@ -44,10 +44,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Tools.h"
 #include "MemoryIniFile.h"
 
-// Open CV
-//
-#include <cv.h>
-#include <highgui.h>
+//#define _D_USE_OPENCV
+
+#ifdef _D_USE_OPENCV
+	// Open CV
+	//
+	#include <cv.h>
+	#include <highgui.h>
+	
+	using namespace cv;
+	
+#endif // _D_USE_OPENCV
 
 #include "simple.h"
 
@@ -56,7 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // ----------------------------------------------------------------------------------------------------------
 
-using namespace cv;
+
 
 
 
@@ -96,10 +103,14 @@ private:
 
 	int					m_nImageBufSize;
 	void					*m_pImageBuf;
+	
+	#ifdef _D_USE_OPENCV
 
-	// open CV stuff
-	//
-	cv::Mat 	m_img_output;
+		// open CV stuff
+		//
+		cv::Mat 	m_img_output;
+	
+	#endif
 
 	void					Init( RASPITEX_STATE *raspitex_state );
 
@@ -176,9 +187,13 @@ void opengl_WeightedMovingMeanBGS::Init( RASPITEX_STATE *raspitex_state )
 	
 	// ---------------------------------------------------------------------------------------------
 	
+#ifdef _D_USE_OPENCV
+	
 	// open CV stuff
 	//
 	m_img_output.create( raspitex_state->m_nAnalyzeWidth, raspitex_state->m_nAnalyzeHeight, CV_8UC1 );
+	
+#endif
 	
 	// ---------------------------------------------------------------------------------------------
 }
@@ -264,6 +279,8 @@ int opengl_WeightedMovingMeanBGS::CheckMD( GfxTexture *p_texture_src )
 		int nImageSize;
 		if (m_texture_image_analyze_dilate.GetImageLayer2( nImageSize, m_pImageBuf, 0 ))
 			{
+		#ifdef _D_USE_OPENCV
+			
 			memcpy( m_img_output.data, m_pImageBuf, nImageSize );
 			
 			//fprintf(stderr, "Have buffer size = %d, \n", nImageSize );
@@ -303,6 +320,8 @@ int opengl_WeightedMovingMeanBGS::CheckMD( GfxTexture *p_texture_src )
 				{
 				nReturn = 1;
 				}
+				
+		#endif	// _D_USE_OPENCV
 			
 			
 			}	// if (m_texture_image_analyze_dilate.GetImageLayer2( nImageSize, m_pImageBuf, 0 ))

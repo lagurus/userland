@@ -206,6 +206,7 @@ MemoryIniFile.o: MemoryIniFile.c.o
 
 # target to build an object file
 MemoryIniFile.c.o:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/MemoryIniFile.c.o
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/MemoryIniFile.c.o
 .PHONY : MemoryIniFile.c.o
 
@@ -214,6 +215,7 @@ MemoryIniFile.i: MemoryIniFile.c.i
 
 # target to preprocess a source file
 MemoryIniFile.c.i:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/MemoryIniFile.c.i
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/MemoryIniFile.c.i
 .PHONY : MemoryIniFile.c.i
 
@@ -222,6 +224,7 @@ MemoryIniFile.s: MemoryIniFile.c.s
 
 # target to generate assembly for a file
 MemoryIniFile.c.s:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/MemoryIniFile.c.s
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/MemoryIniFile.c.s
 .PHONY : MemoryIniFile.c.s
 
@@ -446,6 +449,7 @@ Tools.o: Tools.c.o
 
 # target to build an object file
 Tools.c.o:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/Tools.c.o
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/Tools.c.o
 .PHONY : Tools.c.o
 
@@ -454,6 +458,7 @@ Tools.i: Tools.c.i
 
 # target to preprocess a source file
 Tools.c.i:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/Tools.c.i
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/Tools.c.i
 .PHONY : Tools.c.i
 
@@ -462,6 +467,7 @@ Tools.s: Tools.c.s
 
 # target to generate assembly for a file
 Tools.c.s:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/Tools.c.s
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/Tools.c.s
 .PHONY : Tools.c.s
 
@@ -518,6 +524,33 @@ gl_scenes/models.c.s:
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/gl_scenes/models.c.s
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/gl_scenes/models.c.s
 .PHONY : gl_scenes/models.c.s
+
+gl_scenes/simple.o: gl_scenes/simple.cpp.o
+.PHONY : gl_scenes/simple.o
+
+# target to build an object file
+gl_scenes/simple.cpp.o:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/gl_scenes/simple.cpp.o
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/gl_scenes/simple.cpp.o
+.PHONY : gl_scenes/simple.cpp.o
+
+gl_scenes/simple.i: gl_scenes/simple.cpp.i
+.PHONY : gl_scenes/simple.i
+
+# target to preprocess a source file
+gl_scenes/simple.cpp.i:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/gl_scenes/simple.cpp.i
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/gl_scenes/simple.cpp.i
+.PHONY : gl_scenes/simple.cpp.i
+
+gl_scenes/simple.s: gl_scenes/simple.cpp.s
+.PHONY : gl_scenes/simple.s
+
+# target to generate assembly for a file
+gl_scenes/simple.cpp.s:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/gl_scenes/simple.cpp.s
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/gl_scenes/simple.cpp.s
+.PHONY : gl_scenes/simple.cpp.s
 
 gl_scenes/sobel.o: gl_scenes/sobel.c.o
 .PHONY : gl_scenes/sobel.o
@@ -627,6 +660,33 @@ gl_scenes/yuv.c.s:
 	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/gl_scenes/yuv.c.s
 .PHONY : gl_scenes/yuv.c.s
 
+graphics.o: graphics.cpp.o
+.PHONY : graphics.o
+
+# target to build an object file
+graphics.cpp.o:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/graphics.cpp.o
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/graphics.cpp.o
+.PHONY : graphics.cpp.o
+
+graphics.i: graphics.cpp.i
+.PHONY : graphics.i
+
+# target to preprocess a source file
+graphics.cpp.i:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/graphics.cpp.i
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/graphics.cpp.i
+.PHONY : graphics.cpp.i
+
+graphics.s: graphics.cpp.s
+.PHONY : graphics.s
+
+# target to generate assembly for a file
+graphics.cpp.s:
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspistill.dir/graphics.cpp.s
+	cd /adata/src/stream/userland_lagurus && $(MAKE) -f host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/build.make host_applications/linux/apps/raspicam/CMakeFiles/raspivid.dir/graphics.cpp.s
+.PHONY : graphics.cpp.s
+
 tga.o: tga.c.o
 .PHONY : tga.o
 
@@ -707,6 +767,9 @@ help:
 	@echo "... gl_scenes/models.o"
 	@echo "... gl_scenes/models.i"
 	@echo "... gl_scenes/models.s"
+	@echo "... gl_scenes/simple.o"
+	@echo "... gl_scenes/simple.i"
+	@echo "... gl_scenes/simple.s"
 	@echo "... gl_scenes/sobel.o"
 	@echo "... gl_scenes/sobel.i"
 	@echo "... gl_scenes/sobel.s"
@@ -719,6 +782,9 @@ help:
 	@echo "... gl_scenes/yuv.o"
 	@echo "... gl_scenes/yuv.i"
 	@echo "... gl_scenes/yuv.s"
+	@echo "... graphics.o"
+	@echo "... graphics.i"
+	@echo "... graphics.s"
 	@echo "... tga.o"
 	@echo "... tga.i"
 	@echo "... tga.s"

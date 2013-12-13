@@ -12,16 +12,18 @@ set (GL_SCENE_SOURCES
    gl_scenes/yuv.c
    gl_scenes/sobel.c
    gl_scenes/square.c
-   gl_scenes/teapot.c)
+   gl_scenes/teapot.c
+   gl_scenes/simple.cpp
+   )
 
 set (COMMON_SOURCES
    RaspiCamControl.c
    RaspiCLI.c
    RaspiPreview.c)
 
-add_executable(raspistill ${COMMON_SOURCES} RaspiStill.c  RaspiTex.c RaspiTexUtil.c tga.c ${GL_SCENE_SOURCES})
+add_executable(raspistill ${COMMON_SOURCES} RaspiStill.c  RaspiTex.c RaspiTexUtil.c tga.c Tools.c MemoryIniFile.c graphics.cpp ${GL_SCENE_SOURCES})
 add_executable(raspiyuv   ${COMMON_SOURCES} RaspiStillYUV.c)
-add_executable(raspivid   ${COMMON_SOURCES} RaspiVid.c RaspiTex.c RaspiTexUtil.c tga.c Tools.c MemoryIniFile.c ${GL_SCENE_SOURCES})
+add_executable(raspivid   ${COMMON_SOURCES} RaspiVid.c RaspiTex.c RaspiTexUtil.c tga.c Tools.c MemoryIniFile.c graphics.cpp ${GL_SCENE_SOURCES})
 
 set (MMAL_LIBS mmal_core mmal_util mmal_vc_client)
 
