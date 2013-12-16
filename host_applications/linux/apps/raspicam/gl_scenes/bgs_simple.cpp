@@ -157,16 +157,16 @@ void opengl_WeightedMovingMeanBGS::Init( RASPITEX_STATE *raspitex_state )
 {
 	m_bActivateMotionDetection 	= memini_getprivateprofileint( "MD", "ActivateMotionDetection", 1 );
 
-	m_dwTickCount_PreviousMD 	= GetTickCount( ) + 3000;		// first 10sec after start don't check MD
-	m_nMD_TestPeriod 					= memini_getprivateprofileint( "MD", "MD_TestPeriodd", 250 );
+	m_dwTickCount_PreviousMD 	= GetTickCount( ) + 4000;		// first 10sec after start don't check MD
+	m_nMD_TestPeriod 					= memini_getprivateprofileint( "MD", "MD_TestPeriodd", 10 );
 
 	m_nEnableWeight					= memini_getprivateprofileint( "BGS", "EnableWeight", 1 );
-	int nThreshold							= memini_getprivateprofileint( "BGS", "Threshold", 15 );	// 15
+	int nThreshold							= memini_getprivateprofileint( "BGS", "Threshold", 4 );	// 15
 
 	m_fThreshold = nThreshold / 255.0;	// recalculate for fragment shader
 
-	m_nBGS_ObjectSizeX				= memini_getprivateprofileint( "BGS", "ObjectSizeX", 3 );
-	m_nBGS_ObjectSizeY				= memini_getprivateprofileint( "BGS", "ObjectSizeY", 3 );
+	m_nBGS_ObjectSizeX				= memini_getprivateprofileint( "BGS", "ObjectSizeX", 2 );
+	m_nBGS_ObjectSizeY				= memini_getprivateprofileint( "BGS", "ObjectSizeY", 2 );
 
 	m_nLayerNumber		= 0;
 
@@ -234,7 +234,7 @@ int opengl_WeightedMovingMeanBGS::CheckMD( GfxTexture *p_texture_src )
 	DrawBGSTexture_Fill( p_texture_src, &m_texture_image_analyze_fill, m_nLayerNumber, -1.0, -1.0, 1.0, 1.0, &m_texture_image_analyze_fill, m_nEnableWeight );
 
 	m_nLayerNumber++;
-	if (m_nLayerNumber >= 2)
+	if (m_nLayerNumber > 3)
 		{
 		DrawBGSTexture_Diff( &m_texture_image_analyze_fill, p_texture_src, -1.0, -1.0, 1.0, 1.0, &m_texture_image_analyze_diff, m_fThreshold );
 		
@@ -298,7 +298,7 @@ int opengl_WeightedMovingMeanBGS::CheckMD( GfxTexture *p_texture_src )
 		
 		}	// if (m_nLayerNumber >= 2)
 	
-	if ((m_nLayerNumber % 30) == 0 || nReturn)
+	if ((m_nLayerNumber % 60) == 0 || nReturn)
 		{
 		char lpstrImageFileName[512];
 		
@@ -533,6 +533,25 @@ static int gl_simple_safe_redraw(RASPITEX_STATE *raspitex_state)
 	
 	// -------------------------------------------------------------------------------------------------------------------
 	
+	if (g_p_clBGS != NULL)
+		{
+		if (g_p_clBGS->CheckTime4MD( ))
+			{
+			if (g_p_clBGS->CheckMD( &texture_orig_image_y ))		// find MD
+				{
+				raspitex_state->m_bSaveAlarmImage = 1;	// hopefully cause save alarm in another thread
+				}
+			}
+		else
+			{
+			//vcos_sleep( 10 );
+			}
+		}
+	
+	//vcos_sleep( 10 );
+	
+	// -------------------------------------------------------------------------------------------------------------------
+	
 	
 	
 	//raspitex_do_capture( raspitex_state );
@@ -543,7 +562,7 @@ static int gl_simple_safe_redraw(RASPITEX_STATE *raspitex_state)
 
 	//texture_orig_image_rgba.SavePNG( "/tmp/texture_simple_safe_image_rgba.png" );
 	
-	vcos_sleep( 10 );
+	//vcos_sleep( 10 );
 
 	return 0;
 }
@@ -654,7 +673,7 @@ int InitGraphics_Simple( int nWidth, int nHeight )
 	GBGSProg_Erode.Create( &GSimpleVS,&GBGSFS_Erode );
 	GBGSProg_Dilate.Create( &GSimpleVS,&GBGSFS_Dilate );
 
-	check_gl();
+	
 
 	//create an ickle vertex buffer
 	static const GLfloat quad_vertex_positions[] = {
@@ -664,13 +683,12 @@ int InitGraphics_Simple( int nWidth, int nHeight )
 		1.0f, 1.0f, 1.0f, 1.0f
 	};
 
-	glGenBuffers(1, &GQuadVertexBuffer);
-	check_gl();
+	GLCHK( glGenBuffers(1, &GQuadVertexBuffer) );
 
-	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertex_positions), quad_vertex_positions, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	check_gl();
+	GLCHK( glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer) );
+	GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertex_positions), quad_vertex_positions, GL_STATIC_DRAW) );
+	GLCHK( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+	
 
 	return nReturn;
 }
@@ -681,35 +699,33 @@ void DrawExternalTexture( int nExternalTextureID, float x0, float y0, float x1, 
 {
 	if(render_target)
 		{
-		glBindFramebuffer(GL_FRAMEBUFFER, render_target->GetFramebufferId());
-		glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() );
-		check_gl();
+		GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, render_target->GetFramebufferId()) );
+		GLCHK( glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() ) );
 		}
 
-	glUseProgram( GExternalProg.GetId());	check_gl();
+	GLCHK( glUseProgram( GExternalProg.GetId()) );
 
 	glUniform2f(glGetUniformLocation(GExternalProg.GetId(),"offset"),x0,y0);
 	glUniform2f(glGetUniformLocation(GExternalProg.GetId(),"scale"),x1-x0,y1-y0);
 	glUniform1i(glGetUniformLocation(GExternalProg.GetId(),"tex"), 0);
-	check_gl();
 
-	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);	check_gl();
-	glBindTexture(GL_TEXTURE_EXTERNAL_OES, nExternalTextureID );	check_gl();
+	GLCHK( glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer) );
+	GLCHK( glBindTexture(GL_TEXTURE_EXTERNAL_OES, nExternalTextureID ) );
 
 	GLuint loc = glGetAttribLocation(GExternalProg.GetId(),"vertex");
-	glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0);	check_gl();
-	glEnableVertexAttribArray(loc);	check_gl();
-	glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ); check_gl();
+	GLCHK( glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0) );
+	GLCHK( glEnableVertexAttribArray(loc) );
+	GLCHK( glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ) );
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	GLCHK( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+	GLCHK( glBindTexture(GL_TEXTURE_2D, 0) );
 	
 	if (render_target)
 		{
 		if (bFlash)
 			{
-			glFinish();	check_gl();
-			glFlush(); check_gl();
+			GLCHK( glFinish() );
+			GLCHK( glFlush() );
 			}
 		
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
@@ -728,10 +744,9 @@ void DrawBGSTexture_Fill( GfxTexture* texture, GfxTexture *previous_texture, int
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER,render_target->GetFramebufferId());
 		glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() );
-		check_gl();
 	}
 
-	glUseProgram(GBGSProg_Fill.GetId());	check_gl();
+	GLCHK( glUseProgram(GBGSProg_Fill.GetId()) );
 
 	glUniform2f(glGetUniformLocation(GBGSProg_Fill.GetId(),"offset"),x0,y0);
 	glUniform2f(glGetUniformLocation(GBGSProg_Fill.GetId(),"scale"),x1-x0,y1-y0);
@@ -739,28 +754,27 @@ void DrawBGSTexture_Fill( GfxTexture* texture, GfxTexture *previous_texture, int
 	glUniform1i(glGetUniformLocation(GBGSProg_Fill.GetId(),"tex_previous"), 1);
 	glUniform1i(glGetUniformLocation(GBGSProg_Fill.GetId(),"nLayerNumber"), nLayerNumber );
 	glUniform1i(glGetUniformLocation(GBGSProg_Fill.GetId(),"nEnableWeight"), nEnableWeight );
-	check_gl();
 
-	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);	check_gl();
+	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,texture->GetId());	check_gl();
+	glBindTexture(GL_TEXTURE_2D,texture->GetId());
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D,previous_texture->GetId());	check_gl();
+	glBindTexture(GL_TEXTURE_2D,previous_texture->GetId());
 	glActiveTexture(GL_TEXTURE0);
 	
 
 	GLuint loc = glGetAttribLocation(GBGSProg_Fill.GetId(),"vertex");
-	glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0);	check_gl();
-	glEnableVertexAttribArray(loc);	check_gl();
-	glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ); check_gl();
+	GLCHK( glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0) );
+	GLCHK( glEnableVertexAttribArray(loc) );
+	GLCHK( glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ) );
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	GLCHK( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+	GLCHK( glBindTexture(GL_TEXTURE_2D, 0) );
 	
 	if(render_target)
 	{
-		//glFinish();	check_gl();
-		//glFlush(); check_gl();
+		//glFinish();
+		//glFlush();
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 		glViewport ( 0, 0, GScreenWidth, GScreenHeight );
 	}
@@ -772,12 +786,11 @@ void DrawBGSTexture_Diff( GfxTexture* texture, GfxTexture* texture_orig, float x
 {
 	if(render_target)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER,render_target->GetFramebufferId());
-		glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() );
-		check_gl();
+		GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, render_target->GetFramebufferId()) );
+		GLCHK( glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() ) );
 	}
 
-	glUseProgram(GBGSProg_Diff.GetId());	check_gl();
+	GLCHK( glUseProgram(GBGSProg_Diff.GetId()) );
 
 	glUniform2f(glGetUniformLocation(GBGSProg_Diff.GetId(),"offset"),x0,y0);
 	glUniform2f(glGetUniformLocation(GBGSProg_Diff.GetId(),"scale"),x1-x0,y1-y0);
@@ -785,27 +798,26 @@ void DrawBGSTexture_Diff( GfxTexture* texture, GfxTexture* texture_orig, float x
 	glUniform1i(glGetUniformLocation(GBGSProg_Diff.GetId(),"tex_orig"), 1);
 	//glUniform1f(glGetUniformLocation(GBGSProg_Diff.GetId(),"fThreshold"), fThreshold );
 	glUniform2f(glGetUniformLocation(GBGSProg_Diff.GetId(),"fThreshold"), fThreshold, fThreshold );
-	check_gl();
 
-	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);	check_gl();
+	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,texture->GetId());	check_gl();
+	glBindTexture(GL_TEXTURE_2D,texture->GetId());
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D,texture_orig->GetId());	check_gl();
+	glBindTexture(GL_TEXTURE_2D,texture_orig->GetId());
 	glActiveTexture(GL_TEXTURE0);
 	
 	GLuint loc = glGetAttribLocation(GBGSProg_Diff.GetId(),"vertex");
-	glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0);	check_gl();
-	glEnableVertexAttribArray(loc);	check_gl();
-	glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ); check_gl();
+	GLCHK( glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0) );
+	GLCHK( glEnableVertexAttribArray(loc) );
+	GLCHK( glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ) );
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	GLCHK( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+	GLCHK( glBindTexture(GL_TEXTURE_2D, 0) );
 	
 	if(render_target)
 	{
-		//glFinish();	check_gl();
-		//glFlush(); check_gl();
+		//glFinish();
+		//glFlush();
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 		glViewport ( 0, 0, GScreenWidth, GScreenHeight );
 	}
@@ -817,35 +829,33 @@ void DrawBGSTexture_Erode( GfxTexture* texture, float x0, float y0, float x1, fl
 {
 	if(render_target)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER,render_target->GetFramebufferId());
-		glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() );
-		check_gl();
+		GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, render_target->GetFramebufferId()) );
+		GLCHK( glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() ) );
 	}
 
-	glUseProgram(GBGSProg_Erode.GetId());	check_gl();
+	GLCHK( glUseProgram(GBGSProg_Erode.GetId()) );
 
 	glUniform2f(glGetUniformLocation(GBGSProg_Erode.GetId(),"offset"),x0,y0);
 	glUniform2f(glGetUniformLocation(GBGSProg_Erode.GetId(),"scale"),x1-x0,y1-y0);
 	glUniform1i(glGetUniformLocation(GBGSProg_Erode.GetId(),"tex"), 0);
 	glUniform2f(glGetUniformLocation(GBGSProg_Erode.GetId(),"fTexelSize"), fTexelSizeX, fTexelSizeY );
-	check_gl();
 
-	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);	check_gl();
+	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,texture->GetId());	check_gl();
+	glBindTexture(GL_TEXTURE_2D,texture->GetId());
 
 	GLuint loc = glGetAttribLocation(GBGSProg_Erode.GetId(),"vertex");
-	glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0);	check_gl();
-	glEnableVertexAttribArray(loc);	check_gl();
-	glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ); check_gl();
+	GLCHK( glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0) );
+	GLCHK( glEnableVertexAttribArray(loc) );
+	GLCHK( glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ) );
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	GLCHK( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+	GLCHK( glBindTexture(GL_TEXTURE_2D, 0) );
 	
 	if(render_target)
 	{
-		//glFinish();	check_gl();
-		//glFlush(); check_gl();
+		//glFinish();
+		//glFlush();
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 		glViewport ( 0, 0, GScreenWidth, GScreenHeight );
 	}
@@ -857,35 +867,33 @@ void DrawBGSTexture_Dilate( GfxTexture* texture, float x0, float y0, float x1, f
 {
 	if(render_target)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER,render_target->GetFramebufferId());
-		glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() );
-		check_gl();
+		GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, render_target->GetFramebufferId()) );
+		GLCHK( glViewport ( 0, 0, render_target->GetWidth(), render_target->GetHeight() ) );
 	}
 
-	glUseProgram(GBGSProg_Dilate.GetId());	check_gl();
+	GLCHK( glUseProgram(GBGSProg_Dilate.GetId()) );
 
 	glUniform2f(glGetUniformLocation(GBGSProg_Dilate.GetId(),"offset"),x0,y0);
 	glUniform2f(glGetUniformLocation(GBGSProg_Dilate.GetId(),"scale"),x1-x0,y1-y0);
 	glUniform1i(glGetUniformLocation(GBGSProg_Dilate.GetId(),"tex"), 0);
 	glUniform2f(glGetUniformLocation(GBGSProg_Dilate.GetId(),"fTexelSize"), fTexelSizeX, fTexelSizeY );
-	check_gl();
 
-	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);	check_gl();
+	glBindBuffer(GL_ARRAY_BUFFER, GQuadVertexBuffer);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,texture->GetId());	check_gl();
+	glBindTexture(GL_TEXTURE_2D,texture->GetId());
 
 	GLuint loc = glGetAttribLocation(GBGSProg_Dilate.GetId(),"vertex");
-	glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0);	check_gl();
-	glEnableVertexAttribArray(loc);	check_gl();
-	glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ); check_gl();
+	GLCHK( glVertexAttribPointer(loc, 4, GL_FLOAT, 0, 16, 0) );
+	GLCHK( glEnableVertexAttribArray(loc) );
+	GLCHK( glDrawArrays ( GL_TRIANGLE_STRIP, 0, 4 ) );
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	GLCHK( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+	GLCHK( glBindTexture(GL_TEXTURE_2D, 0) );
 	
 	if(render_target)
 	{
-		//glFinish();	check_gl();
-		//glFlush(); check_gl();
+		//glFinish();
+		//glFlush();
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 		glViewport ( 0, 0, GScreenWidth, GScreenHeight );
 	}

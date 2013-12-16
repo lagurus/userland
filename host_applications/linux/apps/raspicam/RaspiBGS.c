@@ -330,7 +330,7 @@ void ReadDataFromINI( RASPIVID_STATE *state, int bShowInfo )
 	state->raspitex_state.m_nAnalyzeWidth 	= memini_getprivateprofileint( "Video", "AnalyzeX", 320 );
 	state->raspitex_state.m_nAnalyzeHeight= memini_getprivateprofileint( "Video", "AnalyzeY", 240 );
 		
-	const char *lpstrPathFile = memini_getprivateprofilestring( "Common", "FilePath", "/adata/video" );
+	const char *lpstrPathFile = memini_getprivateprofilestring( "Common", "FilePath", "/tmp" );
 		
 	if (strlen( lpstrPathFile ) > 0)
 		{

@@ -164,7 +164,7 @@ int raspitex_parse_cmdline(RASPITEX_STATE *state,
          else if (strcmp(arg2, "sobel") == 0)
             state->scene_id = RASPITEX_SCENE_SOBEL;
          else if (strcmp(arg2, "simple") == 0)
-            state->scene_id = RASPITEXT_SCENE_BGS_SIMPLE;
+            state->scene_id = RASPITEXT_SCENE_SIMPLE;
          else
             vcos_log_error("Unknown scene %s", arg2);
 
@@ -348,8 +348,8 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
 
       //raspitex_do_capture(state);
 
-      eglSwapBuffers(state->display, state->surface);
-      update_fps();
+      //eglSwapBuffers(state->display, state->surface);
+      //update_fps();
    }
    else
    {
@@ -510,6 +510,10 @@ static void *preview_worker(void *arg)
 				{
 				vcos_log_info("%s: Error drawing frame. Stopping.", VCOS_FUNCTION);
 				state->preview_stop = 1;
+				}
+			else
+				{
+				update_fps( );
 				}
 			
 			// -------------------------------------------------------------------------------------
@@ -755,7 +759,7 @@ int raspitex_init(RASPITEX_STATE *state)
          rc = sobel_open(state);
          break;
 
-     case RASPITEXT_SCENE_BGS_SIMPLE:
+     case RASPITEXT_SCENE_SIMPLE:
          rc = gl_simple_open(state);
          break;
 	  
