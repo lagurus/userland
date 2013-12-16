@@ -50,7 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gl_scenes/teapot.h"
 #include "gl_scenes/yuv.h"
 
-#include "gl_scenes/simple.h"
+#include "gl_scenes/bgs_simple.h"
 
 #include "Tools.h"
 
@@ -164,7 +164,7 @@ int raspitex_parse_cmdline(RASPITEX_STATE *state,
          else if (strcmp(arg2, "sobel") == 0)
             state->scene_id = RASPITEX_SCENE_SOBEL;
          else if (strcmp(arg2, "simple") == 0)
-            state->scene_id = RASPITEXT_SCENE_SIMPLE;
+            state->scene_id = RASPITEXT_SCENE_BGS_SIMPLE;
          else
             vcos_log_error("Unknown scene %s", arg2);
 
@@ -755,7 +755,7 @@ int raspitex_init(RASPITEX_STATE *state)
          rc = sobel_open(state);
          break;
 
-     case RASPITEXT_SCENE_SIMPLE:
+     case RASPITEXT_SCENE_BGS_SIMPLE:
          rc = gl_simple_open(state);
          break;
 	  

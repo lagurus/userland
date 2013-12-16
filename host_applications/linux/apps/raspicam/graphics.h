@@ -15,12 +15,7 @@
 
 // --------------------------------------------------------------------------------------------------
 
-/*void InitGraphics();
-void ReleaseGraphics();
-void BeginFrame();
-void EndFrame();*/
-
-int InitGraphics_Simple( int nWidth, int nHeight, EGLDisplay eglDisplay, EGLSurface eglSurface );
+#define check_gl() assert(glGetError() == 0)
 
 class GfxShader
 {
@@ -71,7 +66,6 @@ public:
 	bool GenerateFrameBuffer();
 	
 	void SetPixels( const void* data );
-	void	SetRGBForce( bool bIsRGBA );
 	//void SetPixelsDirect( );
 	
 	GLuint GetId() { return Id; }
@@ -90,23 +84,6 @@ public:
 	bool	GetPixels( void *ptr_image, int nSize );
 };
 
-void SaveFrameBuffer(const char* fname);
+//void SaveFrameBuffer(const char* fname);
 
-void DrawExternalTexture( int nExternalTextureID, float x0, float y0, float x1, float y1, GfxTexture *render_target, bool bFlash );
 
-void DrawGreyScaleTexture( GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture *render_target);
-
-void DrawBGSTexture_Fill( GfxTexture* texture, GfxTexture *previous_texture, int nLayerNumber, float x0, float y0, float x1, float y1, GfxTexture *render_target, int nEnableWeight );
-void DrawBGSTexture_Diff( GfxTexture* texture, GfxTexture* texture_orig, float x0, float y0, float x1, float y1, GfxTexture *render_target, float fThreshold );
-void DrawBGSTexture_Erode( GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture *render_target, float fTexelSizeX, float fTexelSizeY );
-void DrawBGSTexture_Dilate( GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture *render_target, float fTexelSizeX, float fTexelSizeY );
-
-void DrawTextureRect(GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture* render_target);
-void DrawYUVTextureRect(GfxTexture* ytexture, GfxTexture* utexture, GfxTexture* vtexture, float x0, float y0, float x1, float y1, GfxTexture* render_target);
-void DrawBlurredRect(GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture* render_target);
-void DrawSobelRect(GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture* render_target);
-void DrawMedianRect(GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture* render_target);
-void DrawMultRect(GfxTexture* texture, float x0, float y0, float x1, float y1, float r, float g, float b, GfxTexture* render_target);
-void DrawThreshRect(GfxTexture* texture, float x0, float y0, float x1, float y1, float r, float g, float b, GfxTexture* render_target);
-void DrawDilateRect(GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture* render_target);
-void DrawErodeRect(GfxTexture* texture, float x0, float y0, float x1, float y1, GfxTexture* render_target);
