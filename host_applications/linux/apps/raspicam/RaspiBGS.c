@@ -315,7 +315,13 @@ void ReadDataFromINI( RASPIVID_STATE *state, int bShowInfo )
 	state->bitrate 									= memini_getprivateprofileint( "Video", "BitRate", 350000 );
 	state->framerate								= memini_getprivateprofileint( "Video", "FrameRate", 25 );*/
 	
-	state->useGL										= memini_getprivateprofileint( "OpenGL", "UseGL", 0 );
+	state->width 										= memini_getprivateprofileint( "Video", "VideoX", 1920 );
+	state->height 										= memini_getprivateprofileint( "Video", "VideoY", 1080 );
+	
+	state->bitrate 									= memini_getprivateprofileint( "Video", "BitRate", 350000 );
+	state->framerate								= memini_getprivateprofileint( "Video", "FrameRate", 30 );
+	
+	state->useGL										= memini_getprivateprofileint( "OpenGL", "UseGL", 1 );
 	const char *lpstrRaspiTexWindow 		= memini_getprivateprofilestring( "OpenGL", "Window", "0,0,1920,1080" );
 	if (sscanf( lpstrRaspiTexWindow, "%d,%d,%d,%d", &state->raspitex_state.x, &state->raspitex_state.y, &state->raspitex_state.width, &state->raspitex_state.height) == 4)
 		{

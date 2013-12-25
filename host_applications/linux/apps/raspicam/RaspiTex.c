@@ -164,7 +164,7 @@ int raspitex_parse_cmdline(RASPITEX_STATE *state,
          else if (strcmp(arg2, "sobel") == 0)
             state->scene_id = RASPITEX_SCENE_SOBEL;
          else if (strcmp(arg2, "simple") == 0)
-            state->scene_id = RASPITEXT_SCENE_SIMPLE;
+            state->scene_id = RASPITEXT_SCENE_BGS_SIMPLE;
          else
             vcos_log_error("Unknown scene %s", arg2);
 
@@ -759,7 +759,7 @@ int raspitex_init(RASPITEX_STATE *state)
          rc = sobel_open(state);
          break;
 
-     case RASPITEXT_SCENE_SIMPLE:
+     case RASPITEXT_SCENE_BGS_SIMPLE:
          rc = gl_simple_open(state);
          break;
 	  
@@ -825,7 +825,7 @@ void raspitex_set_defaults(RASPITEX_STATE *state)
    state->opacity = 255;
    state->width = DEFAULT_WIDTH;
    state->height = DEFAULT_HEIGHT;
-   state->scene_id = RASPITEX_SCENE_SQUARE;
+   state->scene_id = RASPITEXT_SCENE_BGS_SIMPLE;
 
 	//state->config = 0;
 

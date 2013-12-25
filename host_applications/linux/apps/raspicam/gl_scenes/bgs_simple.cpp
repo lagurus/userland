@@ -342,7 +342,7 @@ int opengl_WeightedMovingMeanBGS::CheckMD( GfxTexture *p_texture_src )
 			GetImageFileNamePrim( lpstrImageFileName, m_raspitex_state->m_lpstrPathFile, -1, "_texture_image_analyze_dilate.tga" );
 			m_texture_image_analyze_dilate.SaveTGALayer2( lpstrImageFileName, m_pImageBuf, 0 );*/
 
-			p_texture_src->SaveTGALayer2( "/tmp/texture_orig_image_y.tga", m_pImageBuf, 0 );
+			/*p_texture_src->SaveTGALayer2( "/tmp/texture_orig_image_y.tga", m_pImageBuf, 0 );
 			
 			m_texture_image_analyze_fill.SaveTGALayer2( "/tmp/texture_image_analyze_fill_background.tga", m_pImageBuf, 3 );		// background = result of DrawBGSTexture_Fill is in 3.layer (aplha channel)
 			
@@ -350,7 +350,7 @@ int opengl_WeightedMovingMeanBGS::CheckMD( GfxTexture *p_texture_src )
 			m_texture_image_analyze_diff.SaveTGALayer2( "/tmp/texture_image_analyze_diff_foreground_threshold.tga", m_pImageBuf, 0 );
 			
 			m_texture_image_analyze_erode.SaveTGALayer2( "/tmp/texture_image_analyze_erode.tga", m_pImageBuf, 0 );
-			m_texture_image_analyze_dilate.SaveTGALayer2( "/tmp/texture_image_analyze_dilate.tga", m_pImageBuf, 0 );
+			m_texture_image_analyze_dilate.SaveTGALayer2( "/tmp/texture_image_analyze_dilate.tga", m_pImageBuf, 0 );*/
 			}
 		
 		
