@@ -117,6 +117,8 @@ const int ABORT_INTERVAL = 100; // ms
 /// Run/record forever
 #define WAIT_METHOD_FOREVER        4
 
+#define WAIT_METHOD_SEMAPHORE        64
+
 
 
 int mmal_status_to_int(MMAL_STATUS_T status);
@@ -161,6 +163,7 @@ struct RASPIVID_STATE_S
    int segmentSize;                    /// Segment mode In timed cycle mode, the amount of time the capture is off per cycle
    int segmentWrap;                    /// Point at which to wrap segment counter
    int segmentNumber;                  /// Current segment counter. Starts at 1.
+   int	m_nSegmentNow;
 
    RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
    RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
@@ -181,8 +184,10 @@ struct RASPIVID_STATE_S
    
    
    
-   char 			m_lpstrPathFile[1024];
+   char 									m_lpstrPathFile[1024];
    int useGL;                          /// Render preview using OpenGL
+   
+   
 
 };
 
@@ -315,11 +320,19 @@ void ReadDataFromINI( RASPIVID_STATE *state, int bShowInfo )
 	state->bitrate 									= memini_getprivateprofileint( "Video", "BitRate", 350000 );
 	state->framerate								= memini_getprivateprofileint( "Video", "FrameRate", 25 );*/
 	
-	state->width 										= memini_getprivateprofileint( "Video", "VideoX", 1920 );
-	state->height 										= memini_getprivateprofileint( "Video", "VideoY", 1080 );
+	state->onTime									= memini_getprivateprofileint( "Video", "AlarmTime", state->onTime );
+	state->bCapturing								= memini_getprivateprofileint( "Video", "CaptureInitState", 1 );
+	state->waitMethod								= memini_getprivateprofileint( "Video", "WaitMethod", WAIT_METHOD_SEMAPHORE );
+	state->segmentSize							= 0;
+	state->bInlineHeaders 						= 1;
+	state->segmentNumber 					= 0;
+	//state->m_nSegmentNow 					= 1;		// create right file name
 	
-	state->bitrate 									= memini_getprivateprofileint( "Video", "BitRate", 350000 );
-	state->framerate								= memini_getprivateprofileint( "Video", "FrameRate", 30 );
+	state->width 										= memini_getprivateprofileint( "Video", "VideoX", state->width );
+	state->height 										= memini_getprivateprofileint( "Video", "VideoY", state->height );
+	
+	state->bitrate 									= memini_getprivateprofileint( "Video", "BitRate", state->bitrate );
+	state->framerate								= memini_getprivateprofileint( "Video", "FrameRate", state->framerate );
 	
 	state->useGL										= memini_getprivateprofileint( "OpenGL", "UseGL", 1 );
 	const char *lpstrRaspiTexWindow 		= memini_getprivateprofilestring( "OpenGL", "Window", "0,0,1920,1080" );
@@ -335,6 +348,8 @@ void ReadDataFromINI( RASPIVID_STATE *state, int bShowInfo )
 	
 	state->raspitex_state.m_nAnalyzeWidth 	= memini_getprivateprofileint( "Video", "AnalyzeX", 320 );
 	state->raspitex_state.m_nAnalyzeHeight= memini_getprivateprofileint( "Video", "AnalyzeY", 240 );
+	
+	state->raspitex_state.m_nOnTime = state->onTime;	// during alarm don't test MD
 		
 	const char *lpstrPathFile = memini_getprivateprofilestring( "Common", "FilePath", "/tmp" );
 		
@@ -389,7 +404,7 @@ static void default_status(RASPIVID_STATE *state)
    state->immutableInput = 1;
    state->profile = MMAL_VIDEO_PROFILE_H264_HIGH;
    state->waitMethod = WAIT_METHOD_NONE;
-   state->onTime = 5000;
+   state->onTime = 30000;
    state->offTime = 5000;
 
    state->bCapturing = 0;
@@ -398,6 +413,7 @@ static void default_status(RASPIVID_STATE *state)
    state->segmentSize = 0;  // 0 = not segmenting the file.
    state->segmentNumber = 1;
    state->segmentWrap = 0; // Point at which to wrap segment number back to 1. 0 = no wrap
+   state->m_nSegmentNow = 0;
    
    state->useGL = 0;
 
@@ -429,6 +445,8 @@ static void default_status(RASPIVID_STATE *state)
 	//printf("PATH3: %s \n", lpstr_config_file );
 
 	// ---------------------------------------------------------------
+	
+	sem_init(&state->raspitex_state.m_sem_MDAlarm, 0, 0 );
 
 	memini_init( lpstr_config_file );
 
@@ -851,7 +869,7 @@ static FILE *open_filename(RASPIVID_STATE *pState)
    FILE *new_handle = NULL;
    char *tempname = NULL, *filename = NULL;
 
-   if (pState->segmentSize)
+   if (pState->segmentSize || pState->m_nSegmentNow)
    {
       // Create a new filename string
       asprintf(&tempname, pState->filename, pState->segmentNumber);
@@ -906,15 +924,15 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
       int bytes_written = buffer->length;
       int64_t current_time = vcos_getmicrosecs64()/1000;
 
-      vcos_assert(pData->file_handle);
+      //vcos_assert(pData->file_handle);
 
       // For segmented record mode, we need to see if we have exceeded our time/size,
       // but also since we have inline headers turned on we need to break when we get one to
       // ensure that the new stream has the header in it. If we break on an I-frame, the
       // SPS/PPS header is actually in the previous chunk.
-      if (pData->pstate->segmentSize &&
+      if ((pData->pstate->segmentSize || pData->pstate->m_nSegmentNow) &&
           (buffer->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG) &&
-          current_time > base_time + pData->pstate->segmentSize )
+          (current_time > base_time + pData->pstate->segmentSize || pData->pstate->m_nSegmentNow) )
       {
          FILE *new_handle;
 
@@ -930,18 +948,31 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
 
          if (new_handle)
          {
-            fclose(pData->file_handle);
+			if (pData->file_handle)
+				{
+				fclose(pData->file_handle);
+				pData->file_handle = NULL;
+				}
+			
             pData->file_handle = new_handle;
          }
+	 
+		if (pData->pstate->m_nSegmentNow)
+			{
+			pData->pstate->m_nSegmentNow = 0;
+			}
       }
 
       if (buffer->length)
       {
-         mmal_buffer_header_mem_lock(buffer);
+		if (pData->file_handle)
+			{
+			 mmal_buffer_header_mem_lock(buffer);
 
-         bytes_written = fwrite(buffer->data, 1, buffer->length, pData->file_handle);
+			 bytes_written = fwrite(buffer->data, 1, buffer->length, pData->file_handle);
 
-         mmal_buffer_header_mem_unlock(buffer);
+			 mmal_buffer_header_mem_unlock(buffer);
+			}
       }
 
       if (bytes_written != buffer->length)
@@ -1540,6 +1571,49 @@ static int wait_for_next_change(RASPIVID_STATE *state)
       return keep_running;
    }
 
+	// ---------------------------------------------------------------------------------------------------------------------------------
+
+	case WAIT_METHOD_SEMAPHORE:
+		{
+		//fprintf( stderr, "before sem_trywait \n" );
+		
+		int nRetAlarm = sem_trywait( &state->raspitex_state.m_sem_MDAlarm );		// block till find MD
+		
+		if (nRetAlarm == -1)
+			{
+			//fprintf( stderr, "sem_trywait error=%d,bCapturing=%d\n", errno, state->bCapturing );
+			
+			if (state->bCapturing != 0)
+				{
+				fprintf( stderr, "pause_and_test_abort\n" );
+				
+				pause_and_test_abort(state, state->onTime);
+				state->bCapturing = 1;	// stop H264
+				}
+			else		// not yet capture alarm
+				{
+				vcos_sleep( 100 );
+				state->bCapturing = 1;	// stop H264
+				}
+			
+			
+			}
+		else
+			{
+			fprintf( stderr, "sem_trywait start alarm\n" );
+			state->bCapturing = 0;	// start save H264
+			state->m_nSegmentNow = 1;
+			}
+		
+	
+		
+		
+		
+		
+		}
+	
+	// ---------------------------------------------------------------------------------------------------------------------------------
+
    } // switch
 
    return keep_running;
@@ -1692,10 +1766,10 @@ int main(int argc, const char **argv)
                // Ensure we don't upset the output stream with diagnostics/info
                state.verbose = 0;
             }
-            else
+            /*else
             {
                state.callback_data.file_handle = open_filename(&state);
-            }
+            }*/
 
             if (!state.callback_data.file_handle)
             {
@@ -1748,7 +1822,7 @@ int main(int argc, const char **argv)
          {
             // Only encode stuff if we have a filename and it opened
             // Note we use the copy in the callback, as the call back MIGHT change the file handle
-            if (state.callback_data.file_handle)
+            //if (state.callback_data.file_handle)
             {
                int running = 1;
 
@@ -1779,13 +1853,13 @@ int main(int argc, const char **argv)
                      // How to handle?
                   }
 
-                  if (state.verbose)
+                  /*if (state.verbose)
                   {
                      if (state.bCapturing)
                         fprintf(stderr, "Starting video capture\n");
                      else
                         fprintf(stderr, "Pausing video capture\n");
-                  }
+                  }*/
 
                   running = wait_for_next_change(&state);
                }
@@ -1793,7 +1867,7 @@ int main(int argc, const char **argv)
                if (state.verbose)
                   fprintf(stderr, "Finished capture\n");
             }
-            else
+           /*else
             {
                if (state.timeout)
                   vcos_sleep(state.timeout);
@@ -1803,7 +1877,7 @@ int main(int argc, const char **argv)
                   while(1)
                      vcos_sleep(ABORT_INTERVAL);
                }
-            }
+            }*/
          }
       }
       else
@@ -1838,7 +1912,10 @@ error:
       // Can now close our file. Note disabling ports may flush buffers which causes
       // problems if we have already closed the file!
       if (state.callback_data.file_handle && state.callback_data.file_handle != stdout)
-         fclose(state.callback_data.file_handle);
+		{
+		fclose(state.callback_data.file_handle);
+		state.callback_data.file_handle = NULL;
+		}
 
       /* Disable components */
       if (state.encoder_component)

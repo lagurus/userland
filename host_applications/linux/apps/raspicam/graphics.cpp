@@ -196,23 +196,39 @@ bool GfxShader::LoadFragmentShader( const char *lpstrDir, const char* lpstrFilen
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //
-bool GfxProgram::Create(GfxShader* vertex_shader, GfxShader* fragment_shader)
+bool GfxProgram::Create(GfxShader* vertex_shader, GfxShader* fragment_shader, const char *lpstrLocation )
 {
 	VertexShader = vertex_shader;
 	FragmentShader = fragment_shader;
-	Id = glCreateProgram();
-	glAttachShader(Id, VertexShader->GetId());
-	glAttachShader(Id, FragmentShader->GetId());
-	glLinkProgram(Id);
+
+	m_Id = glCreateProgram();
+	glAttachShader(m_Id, VertexShader->GetId());
+	glAttachShader(m_Id, FragmentShader->GetId());
+	glLinkProgram(m_Id);
 	check_gl();
-	printf("Created program id %d from vs %d and fs %d\n", GetId(), VertexShader->GetId(), FragmentShader->GetId());
+	printf("Created program id %d from vs %d and fs %d\n", m_Id, VertexShader->GetId(), FragmentShader->GetId());
 
 	// Prints the information log for a program object
 	char log[1024];
-	glGetProgramInfoLog(Id,sizeof log,NULL,log);
-	printf("%d:program:\n%s\n", Id, log);
+	glGetProgramInfoLog(m_Id,sizeof log,NULL,log);
+	printf("%d:program:\n%s\n", m_Id, log);
 
-	return true;	
+	m_loc = 0;
+	if (lpstrLocation != NULL)
+		{
+		GetAttribLocation( lpstrLocation );
+		}
+
+	return true;
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//
+bool GfxProgram::GetAttribLocation( const char *lpstrLocation )
+{
+	m_loc = glGetAttribLocation( m_Id, lpstrLocation );
+
+	return true;
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

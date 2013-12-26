@@ -274,22 +274,37 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
     * viewfinder frames this can consume a lot of GPU memory for high-resolution
     * viewfinders.
     */
-   if (buf)
-   {
-      /* Update the texture to the new viewfinder image which should */
-      if (state->ops.update_texture && state->m_nSaveImageRequest == 1)		// tweak for save images, but don't too often -> can have high load on CPU
-      {
-		//fprintf(stderr, "update_texture\n" );
-         rc = state->ops.update_texture(state, (EGLClientBuffer) buf->data);
-         if (rc != 0)
-         {
-            vcos_log_error("%s: Failed to update RGBX texture %d",
-                  VCOS_FUNCTION, rc);
-            goto end;
-         }
-	 
-		state->m_nSaveImageRequest = 2;	// say that I Have one image
-      }
+
+	if (buf)
+		{
+		/* Update the texture to the new viewfinder image which should */
+		
+   
+		if (state->ops.update_texture)
+		{
+		//unsigned dwTick = GetTickCount( );
+		
+		if (state->m_nSaveImageRequest == 1)		// tweak for save images, but don't too often -> can have high load on CPU
+			{
+			//fprintf(stderr, "update_texture\n" );
+			rc = state->ops.update_texture(state, (EGLClientBuffer) buf->data);
+			if (rc != 0)
+				{
+				vcos_log_error("%s: Failed to update RGBX texture %d",
+				VCOS_FUNCTION, rc);
+				goto end;
+				}
+			
+			if (state->m_nSaveImageRequest == 1)
+				{
+				state->m_nSaveImageRequest = 2;		// say that I Have one image
+				}
+			else
+				{
+				state->m_nSaveImageRequest = 4;		// say that I Have image for H264
+				}
+			}
+		}
 
       if (state->ops.update_y_texture)
       {
@@ -334,6 +349,8 @@ static int raspitex_draw(RASPITEX_STATE *state, MMAL_BUFFER_HEADER_T *buf)
 
       state->preview_buf = buf;*/
    }
+
+	//vcos_sleep( 10 );
 
    /*  Do the drawing */
    if (check_egl_image(state) == 0)
@@ -481,8 +498,12 @@ static void *preview_worker(void *arg)
 		
 		//if (buf)
 		
+		int nExistBufferInQueue = 0;
+		
 		while ((buf = mmal_queue_get(state->preview_queue)) != NULL)
 			{
+			nExistBufferInQueue = 1;
+			
 			//vcos_log_info("DATA READ!!!" );
 			
 			
@@ -505,6 +526,8 @@ static void *preview_worker(void *arg)
 			
 			//vcos_sleep( 100 );
 			
+			// now is main chain already free - now can block this thread
+			//
 			rc = state->ops.safe_redraw(state);
 			if (rc != 0)
 				{
@@ -519,6 +542,11 @@ static void *preview_worker(void *arg)
 			// -------------------------------------------------------------------------------------
 			
 			break;
+			}
+		
+		if (!nExistBufferInQueue)	// slow down while cycle otherwise 100% CPU
+			{
+			vcos_sleep( 10 );
 			}
 		
 		/*if (preview_process_returned_bufs(state) != 0)
@@ -565,6 +593,8 @@ static void *preview_worker(void *arg)
 			{
 			
 			}*/
+			
+		
 		}
 	
 	// -------------------------------------------------------------------------------------

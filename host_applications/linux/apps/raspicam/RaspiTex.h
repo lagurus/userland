@@ -216,6 +216,11 @@ typedef struct RASPITEX_STATE
    
    int		m_bSaveAlarmImage;
    
+   sem_t		m_sem_MDAlarm;
+   int				m_nOnTime;
+   
+   
+   
 
 
 } RASPITEX_STATE;

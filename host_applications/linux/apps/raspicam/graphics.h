@@ -37,15 +37,20 @@ class GfxProgram
 {
 	GfxShader* VertexShader;
 	GfxShader* FragmentShader;
-	GLuint Id;
+
+	GLuint m_Id;
+	GLuint m_loc;
 
 public:
 
 	GfxProgram() {}
 	~GfxProgram() {}
 
-	bool Create(GfxShader* vertex_shader, GfxShader* fragment_shader);
-	GLuint GetId() { return Id; }
+	bool Create(GfxShader* vertex_shader, GfxShader* fragment_shader, const char *lpstrLocation = NULL );
+	bool GetAttribLocation( const char *lpstrLocation );
+	
+	GLuint GetId() { return m_Id; }
+	GLuint GetLoc() { return m_loc; }
 };
 
 class GfxTexture
