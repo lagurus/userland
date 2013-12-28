@@ -206,7 +206,7 @@ void opengl_WeightedMovingMeanBGS::Init( RASPITEX_STATE *raspitex_state )
 	m_nImageBufSize = raspitex_state->m_nAnalyzeWidth *  raspitex_state->m_nAnalyzeHeight * 4;
 	m_pImageBuf = malloc( m_nImageBufSize );		// 4 because frame buffer that cannot be grayscale
 	
-	fprintf(stderr, "BGS parameteres:  ObjectSizeX=%d, ObjectSizeY=%d, Threshold=%d, image analyze size %d%x \n", m_nBGS_ObjectSizeX, m_nBGS_ObjectSizeY, nThreshold, raspitex_state->m_nAnalyzeWidth, raspitex_state->m_nAnalyzeHeight );
+	fprintf(stderr, "BGS parameteres:  ObjectSizeX=%d, ObjectSizeY=%d, Threshold=%d, image analyze size %dx%d \n", m_nBGS_ObjectSizeX, m_nBGS_ObjectSizeY, nThreshold, raspitex_state->m_nAnalyzeWidth, raspitex_state->m_nAnalyzeHeight );
 
 	
 	// ---------------------------------------------------------------------------------------------
