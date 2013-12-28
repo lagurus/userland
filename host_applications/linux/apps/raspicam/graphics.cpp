@@ -23,58 +23,6 @@
 #include "graphics.h"
 
 
-//uint32_t GScreenWidth = 0;
-//uint32_t GScreenHeight = 0;
-
-//EGLDisplay GDisplay;
-//EGLSurface GSurface;
-
-
-/*GfxShader GSimpleVS;
-
-GfxShader GSExternalFS;
-GfxShader GSimpleFS;
-GfxShader GSGreyScaleFS;
-GfxShader GBGSFS_Fill;
-GfxShader GBGSFS_Diff;
-GfxShader GBGSFS_Erode;
-GfxShader GBGSFS_Dilate;
-
-GfxShader GYUVFS;
-GfxShader GBlurFS;
-GfxShader GSobelFS;
-GfxShader GMedianFS;
-GfxShader GMultFS;
-GfxShader GThreshFS;
-GfxShader GDilateFS;
-GfxShader GErodeFS;
-
-
-
-GfxProgram GSimpleProg;
-GfxProgram GExternalProg;
-GfxProgram GGreyScaleProg;
-GfxProgram GBGSProg_Fill;
-GfxProgram GBGSProg_Diff;
-GfxProgram GBGSProg_Erode;
-GfxProgram GBGSProg_Dilate;
-
-
-GfxProgram GYUVProg;
-GfxProgram GBlurProg;
-GfxProgram GSobelProg;
-GfxProgram GMedianProg;
-GfxProgram GMultProg;
-GfxProgram GThreshProg;
-GfxProgram GDilateProg;
-GfxProgram GErodeProg;
-
-
-
-GLuint GQuadVertexBuffer;*/
-
-
-
 // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //
 
@@ -338,35 +286,8 @@ bool GfxTexture::GetPixels( void *ptr_image, int nSize )
 	return bReturn;
 }
 
-/*void GfxTexture::SetPixelsDirect( )
-{
-	glBindTexture(GL_TEXTURE_EXTERNAL_OES, Id );
-	check_gl();
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Width, Height, IsRGBA ? GL_RGBA : GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
-	//check_gl();
-	glBindTexture(GL_TEXTURE_2D, 0);
-	check_gl();
-}*/
-
 
 #ifdef _D_USE_PNG
-
-// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-//
-void SaveFrameBuffer(const char* fname)
-{
-	void* image = malloc(GScreenWidth*GScreenHeight*4);
-	glBindFramebuffer(GL_FRAMEBUFFER,0);
-	check_gl();
-	glReadPixels(0,0,GScreenWidth,GScreenHeight, GL_RGBA, GL_UNSIGNED_BYTE, image);
-
-	unsigned error = lodepng::encode(fname, (const unsigned char*)image, GScreenWidth, GScreenHeight, LCT_RGBA);
-	if(error) 
-		printf("error: %d\n",error);
-
-	free(image);
-
-}
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //

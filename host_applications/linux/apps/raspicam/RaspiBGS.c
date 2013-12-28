@@ -284,42 +284,8 @@ static int wait_method_description_size = sizeof(wait_method_description) / size
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //
-void ReadDataFromINI( RASPIVID_STATE *state, int bShowInfo )
+void ReadDataFromCfgFile( RASPIVID_STATE *state, int bShowInfo )
 {
-	/*state->m_nCreateVideoFile 				= memini_getprivateprofileint( "Common", "CreateVideoFile", 0 );
-	state->m_nVideoFileDuration 				= memini_getprivateprofileint( "Common", "VideoFileDuration", 900 );
-	
-	state->m_nImageFilePeriod 				= memini_getprivateprofileint( "Common", "ImageFilePeriod", IMAGE_SAVE_INTERVAL );
-	state->m_nImageFilePeriod 				= state->m_nImageFilePeriod * 1000;
-	state->quality										= memini_getprivateprofileint( "Common", "JPGQuality", 25 );
-
-	state->m_nImageShotPeriod 				= memini_getprivateprofileint( "Common", "ImageShotPeriod", 0 );		// default disabled
-
-	const char *lpstrImageShotPathName			= memini_getprivateprofilestring( "Common", "ImageShotFile", "" );		// default disabled
-	strncpy( state->m_lpstrImageShotPathName, lpstrImageShotPathName, sizeof(state->m_lpstrImageShotPathName) );
-
-	if (bShowInfo)
-		{
-		if (strlen( state->m_lpstrImageShotPathName ) > 0)
-			{
-			fprintf(stderr, "One shot filename: %s\n", state->m_lpstrImageShotPathName );
-			}
-		}
-
-	
-	state->timeout 									= memini_getprivateprofileint( "Common", "EndAfter", 0 );
-	
-	
-	
-	state->width_video 							= memini_getprivateprofileint( "Video", "VideoX", 800 );
-	state->height_video 							= memini_getprivateprofileint( "Video", "VideoY", 600 );
-	state->width_analyze 							= memini_getprivateprofileint( "Video", "AnalyzeX", 320 );
-	state->height_analyze  						= memini_getprivateprofileint( "Video", "AnalyzeY", 240 );
-	state->width_image 							= memini_getprivateprofileint( "Video", "ImageX", 640 );
-	state->height_image 							= memini_getprivateprofileint( "Video", "ImageX", 480 );
-	state->bitrate 									= memini_getprivateprofileint( "Video", "BitRate", 350000 );
-	state->framerate								= memini_getprivateprofileint( "Video", "FrameRate", 25 );*/
-	
 	state->onTime									= memini_getprivateprofileint( "Video", "AlarmTime", state->onTime );
 	state->bCapturing								= memini_getprivateprofileint( "Video", "CaptureInitState", 1 );
 	state->waitMethod								= memini_getprivateprofileint( "Video", "WaitMethod", WAIT_METHOD_SEMAPHORE );
@@ -329,7 +295,7 @@ void ReadDataFromINI( RASPIVID_STATE *state, int bShowInfo )
 	//state->m_nSegmentNow 					= 1;		// create right file name
 	
 	state->width 										= memini_getprivateprofileint( "Video", "VideoX", state->width );
-	state->height 										= memini_getprivateprofileint( "Video", "VideoY", state->height );
+	state->height 									= memini_getprivateprofileint( "Video", "VideoY", state->height );
 	
 	state->bitrate 									= memini_getprivateprofileint( "Video", "BitRate", state->bitrate );
 	state->framerate								= memini_getprivateprofileint( "Video", "FrameRate", state->framerate );
@@ -341,13 +307,13 @@ void ReadDataFromINI( RASPIVID_STATE *state, int bShowInfo )
 		state->raspitex_state.gl_win_defined = 1;
 		}
 	
-	state->raspitex_state.scene_id 			= memini_getprivateprofileint( "OpenGL", "Scene", 64 );		// RASPITEX_SCENE_SQUARE = 0, RASPITEX_SCENE_MIRROR = 1, RASPITEX_SCENE_TEAPOT = 2  ... RASPITEXT_SCENE_BGS_SIMPLE = 64
+	state->raspitex_state.scene_id 				= memini_getprivateprofileint( "OpenGL", "Scene", 64 );		// RASPITEX_SCENE_SQUARE = 0, RASPITEX_SCENE_MIRROR = 1, RASPITEX_SCENE_TEAPOT = 2  ... RASPITEXT_SCENE_BGS_SIMPLE = 64
 	
-	state->raspitex_state.m_nImageWidth 	= memini_getprivateprofileint( "Video", "ImageX", 640 );
+	state->raspitex_state.m_nImageWidth 		= memini_getprivateprofileint( "Video", "ImageX", 640 );
 	state->raspitex_state.m_nImageHeight 	= memini_getprivateprofileint( "Video", "ImageX", 480 );
 	
 	state->raspitex_state.m_nAnalyzeWidth 	= memini_getprivateprofileint( "Video", "AnalyzeX", 320 );
-	state->raspitex_state.m_nAnalyzeHeight= memini_getprivateprofileint( "Video", "AnalyzeY", 240 );
+	state->raspitex_state.m_nAnalyzeHeight	= memini_getprivateprofileint( "Video", "AnalyzeY", 240 );
 	
 	state->raspitex_state.m_nOnTime = state->onTime;	// during alarm don't test MD
 		
@@ -395,7 +361,7 @@ static void default_status(RASPIVID_STATE *state)
    state->timeout = 5000;     // 5s delay before take image
    state->width = 1920;       // Default to 1080p
    state->height = 1080;
-   state->bitrate = 17000000; // This is a decent default bitrate for 1080p
+   state->bitrate = 2000000; // This is a decent default bitrate for 1080p
    state->framerate = VIDEO_FRAME_RATE_NUM;
    state->intraperiod = 0;    // Not set
    state->quantisationParameter = 0;
@@ -445,12 +411,10 @@ static void default_status(RASPIVID_STATE *state)
 	//printf("PATH3: %s \n", lpstr_config_file );
 
 	// ---------------------------------------------------------------
-	
-	sem_init(&state->raspitex_state.m_sem_MDAlarm, 0, 0 );
 
 	memini_init( lpstr_config_file );
 
-	ReadDataFromINI( state, 1 );
+	ReadDataFromCfgFile( state, 1 );
 }
 
 
@@ -1648,6 +1612,8 @@ int main(int argc, const char **argv)
    signal(SIGUSR1, SIG_IGN);
 
    default_status(&state);
+   
+   sem_init( &state.raspitex_state.m_sem_MDAlarm, 0, 0 );
 
    // Do we have any parameters
    if (argc == 1)
@@ -1937,6 +1903,8 @@ error:
 
    if (status != MMAL_SUCCESS)
       raspicamcontrol_check_configuration(128);
+   
+   sem_destroy( &state.raspitex_state.m_sem_MDAlarm );
 
    return exit_code;
 }

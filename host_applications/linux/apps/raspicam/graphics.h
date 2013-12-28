@@ -71,7 +71,6 @@ public:
 	bool GenerateFrameBuffer();
 	
 	void SetPixels( const void* data );
-	//void SetPixelsDirect( );
 	
 	GLuint GetId() { return Id; }
 	GLuint GetFramebufferId() { return FramebufferId; }
@@ -89,6 +88,6 @@ public:
 	bool	GetPixels( void *ptr_image, int nSize );
 };
 
-//void SaveFrameBuffer(const char* fname);
+
 
 
