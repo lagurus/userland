@@ -1,14 +1,21 @@
-This repository contains the source code for the ARM side libraries used on Raspberry Pi and
-RaspiBGS - example of backround substraction which use GPU.
+This repository contains the source code for the ARM side libraries used on Raspberry Pi
+and RaspiBGS - example of backround substraction which use GPU.
 
-It use modified version of raspivid and modified version of graphics.cpp from wibble82.
+It uses modified version of raspivid and modified version of graphics.cpp from wibble82.
 
-Some parts of code are in C and some in C++.
+Some parts of code are in C and some in C++, sorry.
 
-For configuration of some parameters is used raspibgs.cfg file, but for basic tests is not needed to modify this,
-in this case are used default paramters.
+How to build
+--------------------------
 
-Image processing use vertex and fragment shaders, which are placed in glsl directory, but for raspibgs is also needed
+	cmake .
+	make
+	
+
+For configuration of some parameters is used raspibgs.cfg file, but for basic tests is not needed to modify it, in this case are
+used default parameters.
+
+Image processing use vertex and fragment shaders, which are placed in glsl/ directory, but for run raspibgs must be placed
 in diredtory where is raspibgs executed.
 
 example of use:
@@ -16,8 +23,8 @@ example of use:
 
 Behaviour should be:
 
-	check scene motion, if is something detected then is for 30seconds stored H264 video.
-	default resoultion is 1920x1080 for H264 video, for image processing only 320x240.
+check scene motion, if is something detected then is for 30seconds stored H264 video.
+default resoultion is 1920x1080 for H264 video, for image processing only 320x240.
 	
 	when is sensitivity too high/low - try to modify raspibgs.cfg file, interesting parameters are
 	
