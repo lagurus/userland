@@ -29,9 +29,9 @@ default resoultion is 1920x1080 for H264 video, for image processing only 320x24
 when is sensitivity too high/low - try to modify raspibgs.cfg file, interesting parameters are
 	
 	[BGS]
-	ObjectSizeX=2
-	ObjectSizeY=2
-	Threshold=4
+	ObjectSizeX=3
+	ObjectSizeY=3
+	Threshold=9
 		
 Note: file raspibgs.cfg must be in directory where is raspibgs executed!
 

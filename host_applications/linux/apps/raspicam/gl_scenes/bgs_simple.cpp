@@ -176,12 +176,12 @@ void opengl_WeightedMovingMeanBGS::Init( RASPITEX_STATE *raspitex_state )
 	m_nMD_TestPeriod 					= memini_getprivateprofileint( "MD", "MD_TestPeriodd", 10 );
 
 	m_nEnableWeight					= memini_getprivateprofileint( "BGS", "EnableWeight", 1 );
-	int nThreshold							= memini_getprivateprofileint( "BGS", "Threshold", 4 );	// 15
+	int nThreshold							= memini_getprivateprofileint( "BGS", "Threshold", 9 );	// 15
 
 	m_fThreshold = nThreshold / 255.0;	// recalculate for fragment shader
 
-	m_nBGS_ObjectSizeX				= memini_getprivateprofileint( "BGS", "ObjectSizeX", 2 );
-	m_nBGS_ObjectSizeY				= memini_getprivateprofileint( "BGS", "ObjectSizeY", 2 );
+	m_nBGS_ObjectSizeX				= memini_getprivateprofileint( "BGS", "ObjectSizeX", 3 );
+	m_nBGS_ObjectSizeY				= memini_getprivateprofileint( "BGS", "ObjectSizeY", 3 );
 
 	m_nLayerNumber		= 0;
 
@@ -205,6 +205,8 @@ void opengl_WeightedMovingMeanBGS::Init( RASPITEX_STATE *raspitex_state )
 	
 	m_nImageBufSize = raspitex_state->m_nAnalyzeWidth *  raspitex_state->m_nAnalyzeHeight * 4;
 	m_pImageBuf = malloc( m_nImageBufSize );		// 4 because frame buffer that cannot be grayscale
+	
+	fprintf(stderr, "BGS parameteres:  ObjectSizeX=%d, ObjectSizeY=%d, Threshold=%d, image analyze size %d%x \n", m_nBGS_ObjectSizeX, m_nBGS_ObjectSizeY, nThreshold, raspitex_state->m_nAnalyzeWidth, raspitex_state->m_nAnalyzeHeight );
 
 	
 	// ---------------------------------------------------------------------------------------------
