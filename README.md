@@ -7,12 +7,20 @@ Some parts of code are in C and some in C++.
 
 How to build
 
+	git clone https://github.com/lagurus/userland.git raspibgs
+	cd raspibgs
 	cmake .
 	make
 
+
+After successfully build is created raspibgs in ./build/bin/
+
 Some parameters can be configured only in raspibgs.cfg config file, but for basic tests is not needed to modify it, in this case are used default parameters.
 
-Image processing use vertex and fragment shaders, which are placed in glsl/ directory, but raspibgs need them in directory where is raspibgs executed.
+Image processing use vertex and fragment shaders, which are placed in glsl/ directory, but raspibgs need them in directory where is raspibgs executed. You can use script copyglsl.sh which copy *.glsl files into ./build/bin/
+
+	./copyglsl.sh
+
 
 example of use:
 
