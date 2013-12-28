@@ -19,7 +19,7 @@ in diredtory where is raspibgs executed.
 
 example of use:
 
-	raspibgs -t 0 -v -o /tmp/md_%d.h264
+	./build/bin/raspibgs -t 0 -v -o /tmp/alarm_%d.h264
 
 Behaviour should be:
 

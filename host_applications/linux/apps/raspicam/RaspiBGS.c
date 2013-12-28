@@ -1737,11 +1737,11 @@ int main(int argc, const char **argv)
                state.callback_data.file_handle = open_filename(&state);
             }*/
 
-            if (!state.callback_data.file_handle)
+            /*if (!state.callback_data.file_handle)
             {
                // Notify user, carry on but discarding encoded output buffers
                vcos_log_error("%s: Error opening output file: %s\nNo output file will be generated\n", __func__, state.filename);
-            }
+            }*/
          }
 	 
 	 
