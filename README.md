@@ -13,11 +13,11 @@ How to build:
 	make
 
 
-After successfully build is created raspibgs in ./build/bin/
+When is build finished you can find raspibgs in ./build/bin/
 
-Some parameters can be configured only in raspibgs.cfg config file, but for basic tests is not needed to modify it. In this case are used default parameters.
+Some parameters can be configured only in raspibgs.cfg config file, but for basic tests is not needed to modify anything (predefined parameters are used).
 
-Image processing uses vertex and fragment shaders, which are placed in glsl/ directory, but raspibgs need them in directory where is raspibgs executed. You can use script copyglsl.sh which copy *.glsl files into ./build/bin/
+Image processing uses vertex and fragment shaders, which are placed in glsl/ directory, but raspibgs need them in directory where is raspibgs executed. You can use script copyglsl.sh which copy *.glsl files into ./build/bin/ directory.
 
 	./copyglsl.sh
 
@@ -28,7 +28,7 @@ example of use:
 
 Behaviour should be: Check movements in the scene and if is something detected then save 30seconds of H264 video.
 
-Default resolution is 1920x1080 for H264 video, for image processing only 320x240.
+Default resolution is 1920x1080 for H264 video, for image processing 320x240.
 	
 When is sensitivity too high/low - try to modify raspibgs.cfg file, interesting parameters can be
 	
@@ -39,10 +39,10 @@ When is sensitivity too high/low - try to modify raspibgs.cfg file, interesting 
 		
 Note: file raspibgs.cfg must be in directory where is raspibgs executed!
 
-For built without OpenCV - modify host_applications/linux/apps/raspicam/CMakeLists.txt and remove following line: add_definitions(-D_D_USE_OPENCV)
-In this case doesn't work motion detection!
+For built without OpenCV - modify file "host_applications/linux/apps/raspicam/CMakeLists.txt" and remove following line: add_definitions(-D_D_USE_OPENCV)
+But in this case doesn't work motion detection!
 
-Most time consuming part is taken data from GPU and prepare them for OpenCV which locate object in the scene, this can be defintely also made by GPU but now it will need more research.
+Most time consuming part is taken data from GPU and prepare them for OpenCV which locate object in the scene, this can be defintely also made by GPU I will try it in some later versions.
 
 
 
